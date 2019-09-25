@@ -1,5 +1,3 @@
-# API Operations
-
 ## Account
 
 #### Create Account
@@ -84,11 +82,12 @@ This endpoint creates one account.
 
 > All incoming and outgoing payments are represented as transactions and are processed in two stages from the user's perspective:
 
-> - a new transaction is created,
-> - the created transaction is processed, i.e.
-    credit/debit on both sides of transaction if Revolut-to-Revolut, posted to the external payment network (Faster Paymetns, SEPA, SWIFT etc.).
+> - a new transaction is created.
+> - the authorization transaction is accepted/declined .
 
 > A new transaction has pending state, and a processed transaction's state can be one of completed, failed, reverted or declined.
+
+![payment](/img/CreatePayment.png)
 
 #### Create Payment
 
@@ -118,12 +117,14 @@ This endpoint creates one account.
 | Field         | Description                                                           | Format                     |
 |:-------------:|:----------------------------------------------                        | :-------------------------:|
 | id            | the ID of the created transaction                                     |	UUID                     |
-| state	        | the transaction state: *pending*, *completed*, *declined* or *failed* |	Text                     |
-| reason_code   | reason code for *declined* or *failed* transaction state              |	Text                     |
+| state	        | the transaction state: *pending*, *failed*                            |	Text                     |
+| reason_code   | reason code for *failed* transaction state                            |	Text                     |
 | created_at    | the instant when the transaction was created	                        | ISO date/time              |
 | completed_at	| the instant when the transaction was completed                        | ISO date/time              |
 
-#### Receive Payment
+--------
+
+#### Get Transactions
 
 *This endpoint receives a payment.*
 
@@ -135,19 +136,46 @@ This endpoint creates one account.
 
 [No Body]
 
+--------
+
+#### Authorization payment 
+
+*This endpoint creates a payment confirmation.*
+
+##### Request
+
+    POST /pay/auth
+
+**Content-Type** : application/json
+
+| Field         | Description                                                           | Format                     |
+|:-------------:|:----------------------------------------------                        | :-------------------------:|
+| id            | the ID of the previously created transaction                          |	UUID                     |
+| state	        | the transaction state: *accepted*, *declined*                         |	Boolean                  |
+
+##### Response
+
+| Field         | Description                                                           | Format                     |
+|:-------------:|:----------------------------------------------                        | :-------------------------:|
+| id            | the ID of the created transaction                                     |	UUID                     |
+| state	        | the transaction state: *completed*, *declined* or *failed*            |	Text                     |
+| reason_code   | reason code for *declined* or *failed* transaction state              |	Text                     |
+| created_at    | the instant when the transaction was created	                        | ISO date/time              |
+| completed_at	| the instant when the transaction was completed                        | ISO date/time              |
+
 ## Errors
 
 The API uses the following error codes:
 
-|Code|	Meaning|
-|---| ---- |
-|400|	Bad Request -- Your request is invalid.|
-|401|	Unauthorized -- Your API key is wrong.|
-|403|	Forbidden -- Access to the requested resource or action is forbidden.|
-|404|	Not Found -- The requested resource could not be found.|
-|405|	Method Not Allowed -- You tried to access an endpoint with an invalid method.|
-|406|	Not Acceptable -- You requested a format that isn't JSON.|
-|429|	Too Many Requests -- You're sending too many requests.|
-|500|	Internal Server Error -- We had a problem with our server. Try again later.|
-|503|	Service Unavailable -- We're temporarily offline for maintenance. Please try again later.|
+| Code |	                                 Meaning                                                 |
+|------| --------------------------------------------------------------------------------------------|
+| 400  |	Bad Request -- Your request is invalid.                                                  |
+| 401  |	Unauthorized -- Your API key is wrong.                                                   |
+| 403  |	Forbidden -- Access to the requested resource or action is forbidden.                    |
+| 404  |	Not Found -- The requested resource could not be found.                                  |
+| 405  |	Method Not Allowed -- You tried to access an endpoint with an invalid method.            |
+| 406  |	Not Acceptable -- You requested a format that isn't JSON.                                |
+| 429  |	Too Many Requests -- You're sending too many requests.                                   |
+| 500  |	Internal Server Error -- We had a problem with our server. Try again later.              |
+| 503  |	Service Unavailable -- We're temporarily offline for maintenance. Please try again later.|
 

@@ -19,18 +19,21 @@ This endpoint creates one account.
 
 | Field         | Description                                    | Format                     |
 |:-------------:|:---------------------------------------------- |:--------------------------:|
+| user_id       | the user ID                                    | UUID                       | 
+| currency      | the account currency                           | 3-letter ISO currency code |
+
+
+##### Response 
+
+| Field         | Description                                    | Format                     |
+|:-------------:|:---------------------------------------------- |:--------------------------:|
 | id            | the account ID                                 | UUID                       |
-| user_id       | the user ID                                    | UUID                       |
-| type          | the account type                               | Text                       |   
+| user_id       | the user ID                                    | UUID                       |  
 | balance       | the available balance                          | Decimal                    |
 | currency      | the account currency                           | 3-letter ISO currency code |
 | state         | the account state, one of _active_, _inactive_ | Boolean                    |
 | created_at    | the instant when the account was created       | ISO date/time              |
 | updated_at    | the instant when the account was last updated  | ISO date/time              |
-
-
-##### Response 
-
 
 --------
 

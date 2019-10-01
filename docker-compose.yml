@@ -1,0 +1,10 @@
+version : '3'
+
+services :
+  docs :
+      build : 
+        context : Documentation
+      restart : always
+      command : mkdocs serve
+      ports : 
+        - '5000:8000'

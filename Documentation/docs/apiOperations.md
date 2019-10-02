@@ -1,3 +1,5 @@
+Page last revised on: {{ git_revision_date }}
+
 ## Account
 
 #### Create Account

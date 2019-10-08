@@ -99,7 +99,7 @@ And a lot of work which is the same across most web applications you might come 
 <li>A WSGI (Web Server Gateway Inteface) application server (like Gunicorn)</li>
 <li>Your actual application (written using a developer-friendly framework like Django)</li>
 </ul>
-<p><img alt="service" src="/img/service.png"/></p>
+<p><img alt="service" src="../img/service.png"/></p>
 <p>The web server <em>accepts requests, takes care of general domain logic and takes care of handling https connections</em>. Only requests which are meant to arrive at the application are passed on toward the application server and the application itself. The application code does not care about anything except being able to process single requests.</p>
 <p>Gunicorn takes care of everything which happens in-between the web server and your web application. This way, when coding up your a Django application you don’t need to find your own solutions for:</p>
 <ul>

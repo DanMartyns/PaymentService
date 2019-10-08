@@ -1,6 +1,6 @@
 Page last revised on: {{ git_revision_date }}
 
-#### Why use Gunicorn?
+#### Why use Gunicorn and Nginx?
 
 Imagine if you had to do everything yourself with every new web application you build:
 

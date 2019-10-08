@@ -50,7 +50,7 @@
 <li class="current">
 <a class="current" href="./">Gunicorn</a>
 <ul class="subnav">
-<li class="toctree-l3"><a href="#why-use-gunicorn">Why use Gunicorn?</a></li>
+<li class="toctree-l3"><a href="#why-use-gunicorn-and-nginx">Why use Gunicorn and Nginx?</a></li>
 </ul>
 </li>
 </ul>
@@ -81,8 +81,8 @@
 </div>
 <div role="main">
 <div class="section">
-<p>Page last revised on: 2019-10-02</p>
-<h4 id="why-use-gunicorn">Why use Gunicorn?</h4>
+<p>Page last revised on: 2019-10-08</p>
+<h4 id="why-use-gunicorn-and-nginx">Why use Gunicorn and Nginx?</h4>
 <p>Imagine if you had to do everything yourself with every new web application you build:</p>
 <ul>
 <li>Host static files</li>
@@ -96,9 +96,10 @@ And a lot of work which is the same across most web applications you might come 
 <p>Three common building blocks when deploying a Python web application to production are:</p>
 <ul>
 <li>A web server (like nginx)</li>
-<li>A WSGI application server (like Gunicorn)</li>
+<li>A WSGI (Web Server Gateway Inteface) application server (like Gunicorn)</li>
 <li>Your actual application (written using a developer-friendly framework like Django)</li>
 </ul>
+<p><img alt="service" src="../img/service.png"/></p>
 <p>The web server <em>accepts requests, takes care of general domain logic and takes care of handling https connections</em>. Only requests which are meant to arrive at the application are passed on toward the application server and the application itself. The application code does not care about anything except being able to process single requests.</p>
 <p>Gunicorn takes care of everything which happens in-between the web server and your web application. This way, when coding up your a Django application you don’t need to find your own solutions for:</p>
 <ul>
@@ -106,7 +107,7 @@ And a lot of work which is the same across most web applications you might come 
 <li>reacting to lots of web requests at once and distributing the load</li>
 <li>keepiung multiple processes of the web application running</li>
 </ul>
-<p>If you’re planning on running your Python web application in production you’ll want to make use of a WSGI server. This way, you deployment will be more stable, be able to handle more requests at once and be fast about it.</p>
+<p>It's a good strategy running our Python Web Application in a WSGI Server. This way, deployment will be more stable, be able to handle more requests at once and be fast about it.</p>
 </div>
 </div>
 <footer>

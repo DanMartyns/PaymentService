@@ -20,7 +20,7 @@ Three common building blocks when deploying a Python web application to producti
 * A WSGI (Web Server Gateway Inteface) application server (like Gunicorn)
 * Your actual application (written using a developer-friendly framework like Django)
 
-![payment](/img/Service.png)
+![service](img/service.png)
 
 The web server *accepts requests, takes care of general domain logic and takes care of handling https connections*. Only requests which are meant to arrive at the application are passed on toward the application server and the application itself. The application code does not care about anything except being able to process single requests.
 

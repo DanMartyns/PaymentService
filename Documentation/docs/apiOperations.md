@@ -92,7 +92,7 @@ This endpoint creates one account.
 
 > A new transaction has pending state, and a processed transaction's state can be one of completed, failed, reverted or declined.
 
-![payment](/img/CreatePayment.png)
+![payment](img/createpayment.png)
 
 #### Create Payment
 

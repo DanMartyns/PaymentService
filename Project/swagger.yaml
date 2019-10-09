@@ -1,0 +1,16 @@
+swagger: '2.0'
+info:
+  description: >-
+    This contains the specification of the payments service in the Easy Transport System.
+  version: 1.0.0
+  title: Payments Service
+  contact:
+    email: danielmcoelho@ua.pt
+basePath: /api/v1
+tags:
+  - name: Account
+    description: Operations about accounts
+  - name: Payment
+    description: Operations about Payments and Transactions
+
+  

@@ -16,7 +16,7 @@ def create_account():
         :rtype: dict | bytes
     """
     
-    code = HTTPStatus.OK
+    code = HTTPStatus.CREATED
     aux = Auxiliar()
     msg = Message()
     
@@ -80,7 +80,7 @@ def add_amount(account_id):
         elif not activated:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             raise Exception("Your number account is desactivated." )            
-        elif isinstance(float(amount), float):
+        elif not isinstance(float(amount), float):
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your amount is wrong. The amount is not valid" )
         elif float(amount) < 0.0 :
@@ -131,7 +131,7 @@ def activate_account(account_id):
     except Exception as excep :
         return msg.message(code,str(excep))
 
-    # Update the total amount in his account
+    # Update the state of the account
     db.update(Account).values(state = True).where(id == account_id)
     db.commit()
 

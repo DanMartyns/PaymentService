@@ -9,8 +9,13 @@ db = SQLAlchemy()
 class PaymentState(enum.Enum):
 	pending = "pending"
 	completed = "completed"
+	cancelled = "cancelled"
+
+class TransactionState(enum.Enum):
+	created = "created"
+	completed = "completed"
 	failed = "failed"
-	declined = "declined"
+	cancelled = "cancelled"
 
 # MODELS
 
@@ -68,9 +73,10 @@ class Payment(BaseModel, db.Model):
 	"""
 	tablename__ = 'payment'
 
+	id = db.Column(db.Integer, primary_key=True)
 	request_id = db.Column(db.String(40), primary_key=True) 			# The transaction id
-	buyer_id = db.Column(db.Integer, db.ForeignKey("account.id")) 		# The buyer account
-	seller_id = db.Column(db.Integer, db.ForeignKey("account.id")) 		# The seller account
+	account_id = db.Column(db.Integer, db.ForeignKey("account.id")) 	# The buyer account
+	receiver_id = db.Column(db.Integer, db.ForeignKey("account.id")) 	# The seller account
 	created_at = db.Column(db.DateTime, nullable=False) 				# The date when the payment was made
 	completed_at = db.Column(db.DateTime) 								# The date when the payment was made
 	state = db.Column(db.Enum(PaymentState), nullable=False) 			# The state of the payment
@@ -78,12 +84,34 @@ class Payment(BaseModel, db.Model):
 	currency = db.Column(db.Enum(Currency), nullable=False) 			# The currency 
 	reference = db.Column(db.String(128)) 								# An optional textual reference shown on the transaction
 
-	def __init__(self,request_id,buyer_id,seller_id,amount,currency,reference):
+	def __init__(self,request_id,account_id,receiver_id,amount,currency,reference):
+		self.id = uuid.uuid4()
 		self.request_id = request_id
-		self.buyer_id = buyer_id
-		self.seller_id = seller_id
+		self.account_id = account_id
+		self.receiver_id = receiver_id
 		self.created_at = datetime.datetime.utcnow().isoformat()		
 		self.state = PaymentState.pending
 		self.amount = amount
 		self.currency = currency
 		self.reference = reference
+
+class Transaction(BaseModel, db.Model):
+	"""
+		Model for the transactions table
+	"""
+	__tablename__ = 'transactions'
+
+	id = db.Column(db.Integer, primary_key=True)
+	amount = db.Column(db.Float, nullable=False)
+	emission_date = db.Column(db.DateTime, nullable=False)
+	state = db.Column(db.Enum(TransactionState), nullable=False)
+	update_date = db.Column(db.DateTime, nullable=False)
+	id_payment = db.Column(db.Integer, db.ForeignKey("payments.id"), nullable=False)
+	payment = db.relationship("Payment", foreign_keys=id_payment)
+
+	def __init__(self, amount, id_payment):
+		self.amount = amount
+		self.emission_date = datetime.datetime.now()
+		self.state = TransactionState.created
+		self.update_date = datetime.datetime.now()
+		self.id_payment = id_payment

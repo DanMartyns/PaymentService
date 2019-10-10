@@ -84,14 +84,13 @@ def add_amount(id):
         amount = request.json.get('amount')
 
         # Flag to check if account exists
-        exists = db.Query(Account).filter_by(Account.id.contains(id))
-        print(exists)
+        account = Account.query.get(id)
 
         # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(Account.state == True)
+        activated = db.Query(Account).filter_by(state = True)
 
         # Validate the parameters
-        if not aux.validate_uuid(id) or not exists:
+        if not aux.validate_uuid(id) or not account:
             code = HTTPStatus.BAD_REQUEST
             raise Exception(
                 "Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
@@ -110,8 +109,8 @@ def add_amount(id):
         return msg.message(code, str(excep))
 
     # Update the total amount in his account
-    db.update(Account).values(balance=amount).where(id == id)
-    db.commit()
+    account.balance += amount
+    db.session.commit()
 
     response = {
         'status': 'success',
@@ -137,29 +136,24 @@ def activate_account(id):
 
     try:
         # Flag to check if account exists
-        exists = db.Query(Account).filter_by(Account.id.contains(id))
-        print(exists)
-
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(Account.state == True)
+        account = Account.query.get(id)
 
         # Validate the parameters
-        if not aux.validate_uuid(id) or not exists:
+        if not aux.validate_uuid(id) or not account:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
-        elif activated:
+            raise Exception("Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
+        elif account.state:
             code = HTTPStatus.NOT_MODIFIED
             raise Exception("The account is already activated")
     except Exception as excep:
         return msg.message(code, str(excep))
 
     # Update the state of the account
-    db.update(Account).values(state=True).where(id == id)
-    db.commit()
+    account.state = True
+    db.session.commit()
 
     response = {
-        'status': 'success',
+        'status': 'success',      
     }
 
     return msg.message(code, response)
@@ -181,26 +175,22 @@ def desativate_account(id):
 
     try:
         # Flag to check if account exists
-        exists = db.Query(Account).filter_by(Account.id.contains(id))
-        print(exists)
-
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(Account.state == True)
+        account = Account.query.get(id)
 
         # Validate the parameters
-        if not aux.validate_uuid(id) or not exists:
+        if not aux.validate_uuid(id) or not account:
             code = HTTPStatus.BAD_REQUEST
             raise Exception(
                 "Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
-        elif not activated:
+        elif not account.state:
             code = HTTPStatus.NOT_MODIFIED
             raise Exception("The account is already desactivated")
     except Exception as excep:
         return msg.message(code, str(excep))
 
     # Update the total amount in his account
-    db.update(Account).values(state=False).where(id == id)
-    db.commit()
+    account.state = False
+    db.session.commit()
 
     response = {
         'status': 'success',

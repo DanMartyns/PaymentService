@@ -3,6 +3,7 @@ import enum
 import datetime
 from iso4217 import Currency
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import UUID
 
 db = SQLAlchemy()
 
@@ -25,7 +26,7 @@ class TransactionState(enum.Enum):
 
 class BaseModel(db.Model):
     """
-            Base data model for all objects
+        Base data model for all objects
     """
     __abstract__ = True
 
@@ -41,7 +42,7 @@ class BaseModel(db.Model):
 
     def json(self):
         """
-                Define a base way to jsonify models, dealing with datetime objects
+            Define a base way to jsonify models, dealing with datetime objects
         """
         return {
             column: value if not isinstance(
@@ -52,14 +53,14 @@ class BaseModel(db.Model):
 
 class Account(BaseModel, db.Model):
     """
-            Model for the account table
+        Model for the account table
     """
     __tablename__ = 'account'
 
     # The account id
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), primary_key=True)
     # The user id 									
-    user_id = db.Column(db.Integer, nullable=False) 								
+    user_id = db.Column(UUID(as_uuid=True),unique=True, nullable=False) 								
     # The ammount in his account
     balance = db.Column(db.Float, default=0.0, nullable=False)
     # The atual currency
@@ -72,12 +73,33 @@ class Account(BaseModel, db.Model):
     updated_at = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, user_id, currency):
-        self.id = uuid.uuid4()
         self.user_id = user_id
         self.balance = 0.0
         self.currency = currency
         self.state = True
         self.created_at = self.updated_at = datetime.datetime.utcnow().isoformat()
+
+class Transaction(BaseModel, db.Model):
+    """
+        Model for the transactions table
+    """
+    __tablename__ = 'transactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    emission_date = db.Column(db.DateTime, nullable=False)
+    state = db.Column(db.Enum(TransactionState), nullable=False)
+    update_date = db.Column(db.DateTime, nullable=False)
+    id_payment = db.Column(db.Integer, db.ForeignKey("payment.id"), nullable=False)
+    
+    payment = db.relationship("Payment", foreign_keys=id_payment)
+
+    def __init__(self, amount, id_payment):
+        self.amount = amount
+        self.emission_date = datetime.datetime.now()
+        self.state = TransactionState.created
+        self.update_date = datetime.datetime.now()
+        self.id_payment = id_payment
 
 
 class Payment(BaseModel, db.Model):
@@ -86,13 +108,14 @@ class Payment(BaseModel, db.Model):
     """
     tablename__ = 'payment'
 
+    # The payment id
     id = db.Column(db.Integer, primary_key=True)
-    # The transaction id
-    request_id = db.Column(db.String(40), primary_key=True)
+    # The "product" id
+    request_id = db.Column(db.String(40), nullable=False)
     # The buyer account
-    account_id = db.Column(db.Integer, db.ForeignKey("account.id"),nullable=False)
+    account_id = db.Column(UUID(as_uuid=True),db.ForeignKey("account.id"), unique=True, nullable=False)
     # The seller account 	
-    receiver_id = db.Column(db.Integer, db.ForeignKey("account.id"),nullable=False) 	
+    receiver_id = db.Column(UUID(as_uuid=True),db.ForeignKey("account.id"), unique=True, nullable=False) 	
     # The date when the payment was made
     created_at = db.Column(db.DateTime, nullable=False)
     # The date when the payment was made
@@ -119,26 +142,3 @@ class Payment(BaseModel, db.Model):
         self.amount = amount
         self.currency = currency
         self.reference = reference
-
-
-class Transaction(BaseModel, db.Model):
-    """
-            Model for the transactions table
-    """
-    __tablename__ = 'transactions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Float, nullable=False)
-    emission_date = db.Column(db.DateTime, nullable=False)
-    state = db.Column(db.Enum(TransactionState), nullable=False)
-    update_date = db.Column(db.DateTime, nullable=False)
-    id_payment = db.Column(db.Integer, db.ForeignKey("payment.id"), nullable=False)
-    
-    payment = db.relationship("Payment", foreign_keys=id_payment)
-
-    def __init__(self, amount, id_payment):
-        self.amount = amount
-        self.emission_date = datetime.datetime.now()
-        self.state = TransactionState.created
-        self.update_date = datetime.datetime.now()
-        self.id_payment = id_payment

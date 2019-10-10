@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, Blueprint
 from auxiliar_functions import Auxiliar, Message
 from models import db, Account, Payment
 from http import HTTPStatus
+from iso4217 import Currency
 import datetime
 import uuid
 
@@ -23,33 +24,47 @@ def create_account():
 
     try:
         # Get parameters
-        user_id = request.json.get('user_id')
+        user_id = uuid.UUID(uuid.UUID(request.json.get('user_id')).hex) 
         currency = request.json.get('currency')
-
+        
         # Validate the parameters
         if not aux.validate_uuid(user_id):
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your user_id is wrong. The user_id is not a universally unique identifier")
-        elif currency not in aux.currency_codes():
+            raise Exception("Your user_id is wrong. The user_id is not a universally unique identifier")
+        elif isinstance(currency, Currency):
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
+            raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
 
     except Exception as excep:
         return msg.message(code, str(excep))
 
     # Save the account with the user id
-    account = Account(user_id=user_id, currency=currency)
-    db.session.add(account)
+    ac = Account(user_id=user_id, currency=Currency(currency))
+    db.session.add(ac)
     db.session.commit()
 
-    # Return the information
-    date = datetime.datetime.utcnow().isoformat()
-    return msg.message(code, jsonify(id=uuid.uuid4(), user_id=user_id, balance=0, currency=currency, state="activate", created_at=date, updated_at=date))
+    account = Account.query.get(ac.id)
+
+    response = {
+        'status': 'success',
+        'account':
+        {
+            'id' : account.id,
+            'user': account.user_id,
+            'currency': account.currency.name,            
+            'balance': account.balance,
+            'state': 'active' if account.state else 'desactive',
+            'created_at': account.created_at,
+            'updated_at': account.updated_at
+        }
+    }
+
+    # Return the information    
+    return msg.message(code, response)    
 
 
-@account_controller.route('/account/<int:id>/amount', methods=['POST'])
+
+@account_controller.route('/account/<uuid:id>/amount', methods=['POST'])
 def add_amount(id):
     """
         Add an amount to an account
@@ -105,7 +120,7 @@ def add_amount(id):
     return msg.message(code, response)
 
 
-@account_controller.route('/account/<int:id>/activate', methods=['POST'])
+@account_controller.route('/account/<uuid:id>/activate', methods=['POST'])
 def activate_account(id):
     """
         Activate the user account
@@ -150,7 +165,7 @@ def activate_account(id):
     return msg.message(code, response)
 
 
-@account_controller.route('/account/<int:id>/desactivate', methods=['POST'])
+@account_controller.route('/account/<uuid:id>/desactivate', methods=['POST'])
 def desativate_account(id):
     """
         Desactivate the user account
@@ -194,7 +209,7 @@ def desativate_account(id):
     return msg.message(code, response)
 
 # Get acount information
-@account_controller.route('/account/<int:id>', methods=['GET'])
+@account_controller.route('/account/<uuid:id>', methods=['GET'])
 def account_info(id):
     """
         Get the account information
@@ -225,18 +240,18 @@ def account_info(id):
     except Exception as excep:
         return msg.message(code, str(excep))
 
-        response = {
-            'status': 'success',
-            'account':
-            {
-                'id': account.id,
-                'user_id': account.user_id,
-                'balance': account.balance,
-                'currency': account.currency,
-                'state': account.state.name,
-                'created_at': account.created_at,
-                'updated_at': account.updated_at
-            }
+    response = {
+        'status': 'success',
+        'account':
+        {
+            'id': account.id,
+            'user': account.user_id,
+            'balance': account.balance,
+            'currency': account.currency.name,
+            'state': 'active' if account.state else 'desactive',
+            'created_at': account.created_at,
+            'updated_at': account.updated_at
         }
+    }
 
     return msg.message(code, response)

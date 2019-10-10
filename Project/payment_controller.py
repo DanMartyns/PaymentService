@@ -36,34 +36,29 @@ def create_payment():
             raise Exception("Missing arguments")
 
         # Flag to check if account exists
-        exists = db.Query(Account).filter_by(Account.id.contains(account_id)) and db.Query(
-            Account).filter_by(Account.id.contains(receiving_id))
+        exists = db.Query(Account).filter_by(Account.id.contains(account_id)) and db.Query(Account).filter_by(Account.id.contains(receiving_id))
         print(exists)
 
         # Validate parameters
         if aux.validate_uuid(account_id) and aux.validate_uuid(receiving_id) and exists:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your number account or the number receiver account is wrong or they don't exist")
+            raise Exception("Your number account or the number receiver account is wrong or they don't exist")
 
         account = Account.query.get(account_id)
 
         # Check if the amount is a float and positive value
         if not isinstance(float(amount), float) and float(amount) < 0.0:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "The amount needs to be a float and positive value")
+            raise Exception("The amount needs to be a float and positive value")
 
         # Check if buyer has minimum amount available
         if account.balance < amount:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your account doesn't have minimum amount available")
+            raise Exception("Your account doesn't have minimum amount available")
         # Check if the currency is valid
         elif currency not in aux.currency_codes():
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
+            raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
 
     except Exception as excep:
         return msg.message(code, str(excep))
@@ -376,20 +371,19 @@ def get_transaction(id, transaction):
     except Exception as excep:
         return msg.message(code, str(excep))
 
-        transaction = Transaction.query.filter_by(
-            id_payment=id, id=transaction)
+    transaction = Transaction.query.filter_by(id_payment=id, id=transaction)
 
-        response = {
-            'status': 'success',
-            'transaction':
-            {
-                'id': transaction.id,
-                'amount': transaction.amount,
-                'emission_date': transaction.emission_date,
-                'state': transaction.state.name,
-                'update_date': transaction.update_date,
-                'id_payment': transaction.id_payment
-            }
+    response = {
+        'status': 'success',
+        'transaction':
+        {
+            'id': transaction.id,
+            'amount': transaction.amount,
+            'emission_date': transaction.emission_date,
+            'state': transaction.state.name,
+            'update_date': transaction.update_date,
+            'id_payment': transaction.id_payment
         }
+    }
 
     return msg.message(code, response)

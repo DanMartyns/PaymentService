@@ -4,3 +4,4 @@ gunicorn==19.7.1
 flask_sqlalchemy==2.3.2
 psycopg2==2.7.5
 iso4217==1.5.20180829
+psycopg2-binary==2.8

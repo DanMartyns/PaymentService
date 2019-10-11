@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, Blueprint
 from auxiliar_functions import Auxiliar, Message
 from models import db, Account, Payment, Transaction
 from http import HTTPStatus
+from iso4217 import Currency
 import datetime
 import uuid
 
@@ -24,39 +25,29 @@ def create_payment():
     try:
         # Get parameters
         request_id = request.json.get('request_id')
-        account_id = request.json.get('account_id')
-        receiving_id = request.json.get('receiving_id')
-        amount = request.json.get('amount')
-        currency = request.json.get('currency')
+        buyer_id = uuid.UUID(uuid.UUID(request.json.get('buyer_id')).hex) 
+        seller_id = uuid.UUID(uuid.UUID(request.json.get('seller_id')).hex) 
+        currency = request.json.get('currency').upper()
         reference = request.json.get('reference')
 
         # Check if there is some missing argument
-        if not request_id or not account_id or not receiving_id or not amount or not currency or not reference:
+        if not request_id or not buyer_id or not seller_id or not currency or not reference:
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Missing arguments")
 
         # Flag to check if account exists
-        exists = db.Query(Account).filter_by(Account.id.contains(account_id)) and db.Query(Account).filter_by(Account.id.contains(receiving_id))
-        print(exists)
+        buyer = Account.query.get(buyer_id)
+        receiver = Account.query.get(seller_id)        
 
         # Validate parameters
-        if aux.validate_uuid(account_id) and aux.validate_uuid(receiving_id) and exists:
+        if not aux.validate_uuid(buyer_id) or not aux.validate_uuid(seller_id) or not buyer or not receiver:
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your number account or the number receiver account is wrong or they don't exist")
 
-        account = Account.query.get(account_id)
+        account = Account.query.get(buyer_id)
 
-        # Check if the amount is a float and positive value
-        if not isinstance(float(amount), float) and float(amount) < 0.0:
-            code = HTTPStatus.BAD_REQUEST
-            raise Exception("The amount needs to be a float and positive value")
-
-        # Check if buyer has minimum amount available
-        if account.balance < amount:
-            code = HTTPStatus.BAD_REQUEST
-            raise Exception("Your account doesn't have minimum amount available")
         # Check if the currency is valid
-        elif currency not in aux.currency_codes():
+        if not isinstance(Currency(currency), Currency):
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
 
@@ -65,7 +56,7 @@ def create_payment():
 
     # Save the state of the payment
     # Everytime that we create a payment, his state is "pending"
-    payment = Payment(request_id, account_id, receiving_id, amount, currency, reference)
+    payment = Payment(request_id, buyer_id, seller_id, Currency(currency), reference)
     db.session.add(payment)
     db.session.commit()
 
@@ -76,14 +67,70 @@ def create_payment():
 
     return msg.message(code, response)
 
+# Get payment
+@payment_controller.route('/account/<uuid:user_id>/payments', methods=['GET'])
+def get_payments(user_id):
+    """
+        Get the payments from an User
+
+        :param id: The id of the user to be fetched
+        :type id: uuid
+
+        :rtype: dict | bytes    
+    """    
+
+    code = HTTPStatus.OK
+    msg = Message()
+    aux = Auxiliar()
+
+    try:
+        account = Account.query.get(user_id)
+        
+        # Check if the id account is a uuid
+        if not aux.validate_uuid(user_id):
+            code = HTTPStatus.BAD_REQUEST
+            raise Exception("The number account is not a universally unique identifier")
+
+        # Check if the account exists
+        if not account:
+            code = HTTPStatus.NOT_FOUND
+            raise Exception("Account not found")
+
+    except Exception as excep:
+        return msg.message(code, str(excep))
+
+    payments = Payment.query.filter_by(account_id=user_id)
+
+    data = []
+    for payment in payments :
+        payment_data = {
+            'id': payment.id,
+            'request' : payment.request_id,
+            'buyer' : payment.account_id,
+            'seller' : payment.receiver_id,
+            'created_at' : payment.created_at,
+            'state': payment.state.name,            
+            'amount': payment.amount,
+            'currency': payment.currency.name,
+            'reference': payment.reference
+        }
+        data.append(payment_data)
+
+    response = {
+        'status': 'success',
+        'payments': data
+    }
+
+    return msg.message(code, response)
+
 # Create and request transaction
-@payment_controller.route('/payment/<int:payment_id>/transactions', methods=['POST'])
-def create_transaction(id):
+@payment_controller.route('/payment/<uuid:payment_id>/transactions', methods=['POST'])
+def create_transaction(payment_id):
     """
         Add transaction to payment by ID
 
-        :param id: Id of the payment to be associated
-        :type id: int
+        :param payment_id: Id of the payment to be associated
+        :type payment_id: int
         :param body: Transaction details
         :type body: dict | bytes
 
@@ -95,13 +142,14 @@ def create_transaction(id):
 
     try:
         amount = request.json.get('amount')
+        reference = request.json.get('reference')
 
         # Check if missing arguments
-        if not amount:
+        if not amount or not reference:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception("The amount value is missing")
+            raise Exception("The amount or reference values is missing")
 
-        payment = Payment.query.get(id)
+        payment = Payment.query.get(payment_id)
 
         # Check if payments exists
         if not payment:
@@ -113,14 +161,13 @@ def create_transaction(id):
         # Check if he is enough money to pay
         if amount > account.balance:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your Account does not have enough available amount")
+            raise Exception("Your Account does not have enough available amount")
 
     except Exception as excep:
         return msg.message(code, str(excep))
 
     # Create a transaction
-    transaction = Transaction(amount, id)
+    transaction = Transaction(amount, payment_id, reference )
     db.session.add(transaction)
 
     payment.amount += amount
@@ -135,7 +182,7 @@ def create_transaction(id):
     return msg.message(code, response)
 
 # Cancel a transaction
-@payment_controller.route('/payment/<int:payment_id>/transactions/<int:transaction>/cancel', methods=['POST'])
+@payment_controller.route('/payment/<uuid:payment_id>/transactions/<uuid:transaction>/cancel', methods=['POST'])
 def cancel_transaction(payment_id, transaction):
     """
         Cancel transaction from payment by the ID of the transaction
@@ -169,8 +216,7 @@ def cancel_transaction(payment_id, transaction):
 
         if transaction.state == "completed":
             code = HTTPStatus.CONFLICT
-            raise Exception(
-                "The transaction is already completed, you cannot cancel")
+            raise Exception("The transaction is already completed, you cannot cancel")
 
     except Exception as excep:
         return msg.message(code, str(excep))
@@ -192,7 +238,7 @@ def cancel_transaction(payment_id, transaction):
     return msg.message(code, response)
 
 # Execute the payment
-@payment_controller.route('/payment/<int:id>/execute', methods=['POST'])
+@payment_controller.route('/payment/<uuid:id>/execute', methods=['POST'])
 def execute(id):
     """
         Execute payment by ID
@@ -223,6 +269,7 @@ def execute(id):
         return msg.message(code, str(excep))
 
     transactions = Transaction.query.filter_by(id_payment=id, state="created")
+    print(transactions)
 
     total = 0.0
     for t in transactions:
@@ -236,8 +283,14 @@ def execute(id):
         # Check if he is enough money to pay
         if total > buyer.balance:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "The account does not have enough available amount")
+            raise Exception("The account does not have enough available amount")
+
+        # Check if the total of the transactions pays the amount of the payment
+        print(total)
+        print(payment.amount)
+        if total != payment.amount :
+            code = HTTPStatus.NOT_ACCEPTABLE
+            raise Exception("The total of the transactions needs to be equals to the payment amount")
 
     except Exception as excep:
         return msg.message(code, str(excep))
@@ -259,7 +312,7 @@ def execute(id):
 
 
 # Authorize the payment
-@payment_controller.route('/payment/<int:id>/authorize', methods=['POST'])
+@payment_controller.route('/payment/<uuid:id>/authorize', methods=['POST'])
 def authorization_payment(id):
     """
         Authorization the payment
@@ -297,7 +350,7 @@ def authorization_payment(id):
     return msg.message(code, response)
 
 # Get all the transactions
-@payment_controller.route('/payment/<int:id>/transactions', methods=['GET'])
+@payment_controller.route('/payment/<uuid:id>/transactions', methods=['GET'])
 def get_transactions(id):
     """
         Find transactions from payment by ID
@@ -322,7 +375,7 @@ def get_transactions(id):
     except Exception as excep:
         return msg.message(code, str(excep))
 
-        transactions = Transaction.query.filter_by(id_payment=id)
+    transactions = Transaction.query.filter_by(id_payment=id)
 
     data = []
     for transaction in transactions:
@@ -336,15 +389,15 @@ def get_transactions(id):
         }
         data.append(transaction_data)
 
-        response = {
-            'status': 'success',
-            'transactions': data
-        }
+    response = {
+        'status': 'success',
+        'transactions': data
+    }
 
     return msg.message(code, response)
 
 # Get a specific transaction
-@payment_controller.route('/payment/<int:id>/transactions/<int:transaction>', methods=['GET'])
+@payment_controller.route('/payment/<uuid:id>/transactions/<uuid:transaction>', methods=['GET'])
 def get_transaction(id, transaction):
     """
         Find transactions from payment by ID
@@ -371,7 +424,7 @@ def get_transaction(id, transaction):
     except Exception as excep:
         return msg.message(code, str(excep))
 
-    transaction = Transaction.query.filter_by(id_payment=id, id=transaction)
+    transaction = Transaction.query.get(transaction)
 
     response = {
         'status': 'success',

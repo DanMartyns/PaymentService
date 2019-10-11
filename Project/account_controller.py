@@ -25,13 +25,13 @@ def create_account():
     try:
         # Get parameters
         user_id = uuid.UUID(uuid.UUID(request.json.get('user_id')).hex) 
-        currency = request.json.get('currency')
+        currency = request.json.get('currency').upper()
         
         # Validate the parameters
         if not aux.validate_uuid(user_id):
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your user_id is wrong. The user_id is not a universally unique identifier")
-        elif isinstance(currency, Currency):
+        elif not isinstance(Currency(currency), Currency):
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
 
@@ -92,8 +92,7 @@ def add_amount(id):
         # Validate the parameters
         if not aux.validate_uuid(id) or not account:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
+            raise Exception("Your number account is wrong. The number account is not a universally unique identifier or doesn't exist")
         elif not activated:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             raise Exception("Your number account is desactivated.")
@@ -102,8 +101,7 @@ def add_amount(id):
             raise Exception("Your amount is wrong. The amount is not valid")
         elif float(amount) < 0.0:
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "Your amount is wrong. The amount needs to be more than 0.0")
+            raise Exception("Your amount is wrong. The amount needs to be more than 0.0")
 
     except Exception as excep:
         return msg.message(code, str(excep))
@@ -125,9 +123,9 @@ def activate_account(id):
         Activate the user account
 
         :param id: The id of the user to be fetched
-            :type id: int
+        :type id: int
 
-            :rtype: dict | bytes    
+        :rtype: dict | bytes    
     """
 
     code = HTTPStatus.OK
@@ -216,11 +214,11 @@ def account_info(id):
 
     try:
         account = Account.query.get(id)
+        
         # Check if the id account is a uuid
         if not aux.validate_uuid(id):
             code = HTTPStatus.BAD_REQUEST
-            raise Exception(
-                "The number account is not a universally unique identifier")
+            raise Exception("The number account is not a universally unique identifier")
 
         # Check if the account exists
         if not account:

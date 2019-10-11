@@ -58,7 +58,7 @@ class Account(BaseModel, db.Model):
     __tablename__ = 'account'
 
     # The account id
-    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), primary_key=True)
+    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The user id 									
     user_id = db.Column(UUID(as_uuid=True),unique=True, nullable=False) 								
     # The ammount in his account
@@ -79,29 +79,6 @@ class Account(BaseModel, db.Model):
         self.state = True
         self.created_at = self.updated_at = datetime.datetime.utcnow().isoformat()
 
-class Transaction(BaseModel, db.Model):
-    """
-        Model for the transactions table
-    """
-    __tablename__ = 'transactions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Float, nullable=False)
-    emission_date = db.Column(db.DateTime, nullable=False)
-    state = db.Column(db.Enum(TransactionState), nullable=False)
-    update_date = db.Column(db.DateTime, nullable=False)
-    id_payment = db.Column(db.Integer, db.ForeignKey("payment.id"), nullable=False)
-    
-    payment = db.relationship("Payment", foreign_keys=id_payment)
-
-    def __init__(self, amount, id_payment):
-        self.amount = amount
-        self.emission_date = datetime.datetime.now()
-        self.state = TransactionState.created
-        self.update_date = datetime.datetime.now()
-        self.id_payment = id_payment
-
-
 class Payment(BaseModel, db.Model):
     """
         Model for the payment table
@@ -109,9 +86,9 @@ class Payment(BaseModel, db.Model):
     tablename__ = 'payment'
 
     # The payment id
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The "product" id
-    request_id = db.Column(db.String(40), nullable=False)
+    request_id = db.Column(db.String(40),unique=True)
     # The buyer account
     account_id = db.Column(UUID(as_uuid=True),db.ForeignKey("account.id"), unique=True, nullable=False)
     # The seller account 	
@@ -132,13 +109,44 @@ class Payment(BaseModel, db.Model):
     buyer = db.relationship("Account", foreign_keys=account_id)
     seller = db.relationship("Account", foreign_keys=receiver_id)
 
-    def __init__(self, request_id, account_id, receiver_id, amount, currency, reference):
+    def __init__(self, request_id, account_id, receiver_id, currency, reference):
         self.id = uuid.uuid4()
         self.request_id = request_id
         self.account_id = account_id
         self.receiver_id = receiver_id
         self.created_at = datetime.datetime.utcnow().isoformat()
         self.state = PaymentState.pending
-        self.amount = amount
+        self.amount = 0.0
         self.currency = currency
+        self.reference = reference
+
+class Transaction(BaseModel, db.Model):
+    """
+        Model for the transactions table
+    """
+    __tablename__ = 'transactions'
+
+    # The id of the transaction
+    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), primary_key=True)
+    # The amount of the transaction
+    amount = db.Column(db.Float, nullable=False)
+    # Emission date of the transaction
+    emission_date = db.Column(db.DateTime, nullable=False)
+    # The state of the transaction
+    state = db.Column(db.Enum(TransactionState), nullable=False)
+    # The update date of the transaction
+    update_date = db.Column(db.DateTime, nullable=False)
+    # The payment id
+    id_payment = db.Column(UUID(as_uuid=True), db.ForeignKey("payment.id"), nullable=False)
+    # An optional textual reference shown on the transaction
+    reference = db.Column(db.String(128))
+    
+    payment = db.relationship("Payment", foreign_keys=id_payment)
+
+    def __init__(self, amount, id_payment,reference):
+        self.amount = amount
+        self.emission_date = datetime.datetime.now()
+        self.state = TransactionState.created
+        self.update_date = datetime.datetime.now()
+        self.id_payment = id_payment
         self.reference = reference

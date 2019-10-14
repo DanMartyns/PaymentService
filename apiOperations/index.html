@@ -50,14 +50,26 @@
 <li><a class="toctree-l3" href="#add-amount">Add Amount</a></li>
 <li><a class="toctree-l3" href="#activate-account">Activate Account</a></li>
 <li><a class="toctree-l3" href="#desactivate-account">Desactivate Account</a></li>
+<li><a class="toctree-l3" href="#account-information">Account Information</a></li>
+<li><a class="toctree-l3" href="#resquest">Resquest</a></li>
+<li><a class="toctree-l3" href="#response_4">Response</a></li>
 </ul>
 <li class="toctree-l2"><a href="#payment">Payment</a></li>
 <ul>
 <li><a class="toctree-l3" href="#create-payment">Create Payment</a></li>
-<li><a class="toctree-l3" href="#get-transactions">Get Transactions</a></li>
+<li><a class="toctree-l3" href="#get-payments">Get Payments</a></li>
+<li><a class="toctree-l3" href="#response_6">Response</a></li>
+<li><a class="toctree-l3" href="#create-transaction">Create Transaction</a></li>
+<li><a class="toctree-l3" href="#response_7">Response</a></li>
+<li><a class="toctree-l3" href="#cancel-transaction">Cancel Transaction</a></li>
+<li><a class="toctree-l3" href="#execute-the-payment">Execute the payment</a></li>
+<li><a class="toctree-l3" href="#request_7">Request</a></li>
 <li><a class="toctree-l3" href="#authorization-payment">Authorization payment</a></li>
+<li><a class="toctree-l3" href="#get-transactions">Get transactions</a></li>
+<li><a class="toctree-l3" href="#get-transaction">Get Transaction</a></li>
 </ul>
 <li class="toctree-l2"><a href="#errors">Errors</a></li>
+<li class="toctree-l2"><a href="#general-response">General Response</a></li>
 </ul>
 </li>
 <li class="toctree-l1">
@@ -93,7 +105,7 @@
 </div>
 <div role="main">
 <div class="section">
-<p>Page last revised on: 2019-10-02</p>
+<p>Page last revised on: 2019-10-14</p>
 <h2 id="account">Account</h2>
 <h4 id="create-account">Create Account</h4>
 <p>This endpoint creates one account. </p>
@@ -131,6 +143,7 @@
 </tbody>
 </table>
 <h5 id="response">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
 <tr>
@@ -151,14 +164,14 @@
 <td align="center">UUID</td>
 </tr>
 <tr>
-<td align="center">balance</td>
-<td align="left">the available balance</td>
-<td align="center">Decimal</td>
-</tr>
-<tr>
 <td align="center">currency</td>
 <td align="left">the account currency</td>
 <td align="center">3-letter ISO currency code</td>
+</tr>
+<tr>
+<td align="center">balance</td>
+<td align="left">the available balance</td>
+<td align="center">Decimal</td>
 </tr>
 <tr>
 <td align="center">state</td>
@@ -179,6 +192,7 @@
 </table>
 <hr/>
 <h4 id="add-amount">Add Amount</h4>
+<p><em>This endpoint permits add an amount to an account</em></p>
 <h5 id="request_1">Request</h5>
 <pre><code>POST /account/&lt;id&gt;/amount
 </code></pre>
@@ -199,33 +213,34 @@
 </tr>
 </tbody>
 </table>
+<h5 id="response_1">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<p>[General Response]</p>
 <hr/>
 <h4 id="activate-account">Activate Account</h4>
+<p><em>This endpoints activate an account</em></p>
 <h5 id="request_2">Request</h5>
 <pre><code>POST /account/&lt;id&gt;/activate
 </code></pre>
+<h5 id="response_2">Response</h5>
 <p><strong>Content-Type</strong> : application/json</p>
-<table>
-<thead>
-<tr>
-<th align="center">Field</th>
-<th align="left">Description</th>
-<th align="center">Format</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="center">state</td>
-<td align="left">the account state, one of <em>active</em>, <em>inactive</em></td>
-<td align="center">Boolean</td>
-</tr>
-</tbody>
-</table>
+<p>[General Response]</p>
 <hr/>
 <h4 id="desactivate-account">Desactivate Account</h4>
+<p><em>This endpoints desactivate an account</em></p>
 <h5 id="request_3">Request</h5>
 <pre><code>POST /account/&lt;id&gt;/desactivate
 </code></pre>
+<h5 id="response_3">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<p>[General Response]</p>
+<hr/>
+<h4 id="account-information">Account Information</h4>
+<p><em>This endpoint gives information about an account</em></p>
+<h4 id="resquest">Resquest</h4>
+<pre><code>GET /account/&lt;id&gt;
+</code></pre>
+<h4 id="response_4">Response</h4>
 <p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
@@ -237,9 +252,39 @@
 </thead>
 <tbody>
 <tr>
+<td align="center">id</td>
+<td align="left">the account ID</td>
+<td align="center">UUID</td>
+</tr>
+<tr>
+<td align="center">user_id</td>
+<td align="left">the user ID</td>
+<td align="center">UUID</td>
+</tr>
+<tr>
+<td align="center">currency</td>
+<td align="left">the account currency</td>
+<td align="center">3-letter ISO currency code</td>
+</tr>
+<tr>
+<td align="center">balance</td>
+<td align="left">the available balance</td>
+<td align="center">Decimal</td>
+</tr>
+<tr>
 <td align="center">state</td>
 <td align="left">the account state, one of <em>active</em>, <em>inactive</em></td>
 <td align="center">Boolean</td>
+</tr>
+<tr>
+<td align="center">created_at</td>
+<td align="left">the instant when the account was created</td>
+<td align="center">ISO date/time</td>
+</tr>
+<tr>
+<td align="center">updated_at</td>
+<td align="left">the instant when the account was last updated</td>
+<td align="center">ISO date/time</td>
 </tr>
 </tbody>
 </table>
@@ -256,7 +301,7 @@
 <h4 id="create-payment">Create Payment</h4>
 <p><em>This endpoint creates a new payment.</em></p>
 <h5 id="request_4">Request</h5>
-<pre><code>POST /pay
+<pre><code>POST account/id/payment
 </code></pre>
 <p><strong>Content-Type</strong> : application/json</p>
 <div class="admonition warning">
@@ -278,19 +323,9 @@
 <td align="center">Text</td>
 </tr>
 <tr>
-<td align="center">account_id</td>
-<td align="left">the ID of the account to pay from</td>
-<td align="center">UUID</td>
-</tr>
-<tr>
-<td align="center">receiving_id</td>
+<td align="center">seller_id</td>
 <td align="left">the ID of the receiving account</td>
 <td align="center">UUID</td>
-</tr>
-<tr>
-<td align="center">amount</td>
-<td align="left">the transaction amount</td>
-<td align="center">Decimal</td>
 </tr>
 <tr>
 <td align="center">currency</td>
@@ -304,7 +339,8 @@
 </tr>
 </tbody>
 </table>
-<h5 id="response_1">Response</h5>
+<h5 id="response_5">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
 <tr>
@@ -316,44 +352,79 @@
 <tbody>
 <tr>
 <td align="center">id</td>
-<td align="left">the ID of the created transaction</td>
+<td align="left">the ID of the created payment</td>
 <td align="center">UUID</td>
 </tr>
+</tbody>
+</table>
+<hr/>
+<h4 id="get-payments">Get Payments</h4>
+<p><em>This endpoint list all payments made by an account.</em></p>
+<h5 id="request_5">Request</h5>
+<pre><code>GET /account/&lt;id&gt;/payments
+</code></pre>
+<h4 id="response_6">Response</h4>
+<p><strong>Content-Type</strong> : application/json</p>
+<table>
+<thead>
 <tr>
-<td align="center">state</td>
-<td align="left">the transaction state: <em>pending</em>, <em>failed</em></td>
+<th align="center">Field</th>
+<th align="left">Description</th>
+<th align="center">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">id</td>
+<td align="left">The payment id</td>
 <td align="center">Text</td>
 </tr>
 <tr>
-<td align="center">reason_code</td>
-<td align="left">reason code for <em>failed</em> transaction state</td>
+<td align="center">request_id</td>
+<td align="left">the client provided ID of the transaction (40 characters max)</td>
 <td align="center">Text</td>
+</tr>
+<tr>
+<td align="center">seller_id</td>
+<td align="left">the ID of the receiving account</td>
+<td align="center">UUID</td>
 </tr>
 <tr>
 <td align="center">created_at</td>
-<td align="left">the instant when the transaction was created</td>
+<td align="left">The date when the payment was created</td>
 <td align="center">ISO date/time</td>
 </tr>
 <tr>
-<td align="center">completed_at</td>
-<td align="left">the instant when the transaction was completed</td>
-<td align="center">ISO date/time</td>
+<td align="center">currency</td>
+<td align="left">the transaction currency</td>
+<td align="center">3-letter ISO currency code</td>
+</tr>
+<tr>
+<td align="center">amount</td>
+<td align="left">The value of the payment</td>
+<td align="center">Decimal</td>
+</tr>
+<tr>
+<td align="center">state</td>
+<td align="left">The state of the payment 'pending, completed or cancelled'</td>
+<td align="center">Text</td>
+</tr>
+<tr>
+<td align="center">reference</td>
+<td align="left">an optional textual reference shown on the transaction</td>
+<td align="center">Text</td>
+</tr>
+<tr>
+<td align="center">--------</td>
+<td align="left"></td>
+<td align="center"></td>
 </tr>
 </tbody>
 </table>
-<hr/>
-<h4 id="get-transactions">Get Transactions</h4>
-<p><em>This endpoint receives a payment.</em></p>
-<h5 id="request_5">Request</h5>
-<pre><code>GET /pay
-</code></pre>
-<p><strong>Content-Type</strong> : application/json</p>
-<p>[No Body]</p>
-<hr/>
-<h4 id="authorization-payment">Authorization payment</h4>
-<p><em>This endpoint creates a payment confirmation.</em></p>
+<h4 id="create-transaction">Create Transaction</h4>
+<p><em>This endpoint creates a transaction associated with a payment</em></p>
 <h5 id="request_6">Request</h5>
-<pre><code>POST /pay/auth
+<pre><code>POST /payment/&lt;id&gt;/transactions
 </code></pre>
 <p><strong>Content-Type</strong> : application/json</p>
 <table>
@@ -366,18 +437,19 @@
 </thead>
 <tbody>
 <tr>
-<td align="center">id</td>
-<td align="left">the ID of the previously created transaction</td>
-<td align="center">UUID</td>
+<td align="center">amount</td>
+<td align="left">amount to add to account</td>
+<td align="center">Decimal</td>
 </tr>
 <tr>
-<td align="center">state</td>
-<td align="left">the transaction state: <em>accepted</em>, <em>declined</em></td>
-<td align="center">Boolean</td>
+<td align="center">reference</td>
+<td align="left">an optional textual reference shown on the transaction</td>
+<td align="center">Text</td>
 </tr>
 </tbody>
 </table>
-<h5 id="response_2">Response</h5>
+<h4 id="response_7">Response</h4>
+<p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
 <tr>
@@ -391,6 +463,58 @@
 <td align="center">id</td>
 <td align="left">the ID of the created transaction</td>
 <td align="center">UUID</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h4 id="cancel-transaction">Cancel Transaction</h4>
+<p><em>This endpoint cancel a transaction associated with a payment</em></p>
+<p>##### Request</p>
+<pre><code>POST /payment/&lt;payment_id&gt;/transactions/&lt;transaction_id&gt;/cancel
+</code></pre>
+<h4 id="execute-the-payment">Execute the payment</h4>
+<p><em>This endpoint</em></p>
+<h4 id="request_7">Request</h4>
+<pre><code>POST /payment/&lt;id&gt;/execute
+</code></pre>
+<h5 id="response_8">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<p>[General Response]</p>
+<hr/>
+<h4 id="authorization-payment">Authorization payment</h4>
+<p><em>This endpoint creates a payment confirmation.</em></p>
+<h5 id="request_8">Request</h5>
+<pre><code>POST /payment/&lt;id&gt;/authorize
+</code></pre>
+<h5 id="response_9">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<p>[General Response]</p>
+<hr/>
+<h4 id="get-transactions">Get transactions</h4>
+<p><em>This endpoint give all the transactions information</em></p>
+<h5 id="request_9">Request</h5>
+<pre><code>GET /payment/&lt;id&gt;/transactions
+</code></pre>
+<h5 id="response_10">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<table>
+<thead>
+<tr>
+<th align="center">Field</th>
+<th align="left">Description</th>
+<th align="center">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">id</td>
+<td align="left">the ID of the created transaction</td>
+<td align="center">UUID</td>
+</tr>
+<tr>
+<td align="center">amount</td>
+<td align="left">The amount of the transaction</td>
+<td align="center">Decimal</td>
 </tr>
 <tr>
 <td align="center">state</td>
@@ -398,17 +522,66 @@
 <td align="center">Text</td>
 </tr>
 <tr>
-<td align="center">reason_code</td>
-<td align="left">reason code for <em>declined</em> or <em>failed</em> transaction state</td>
-<td align="center">Text</td>
+<td align="center">id_payment</td>
+<td align="left">The id of the payment which the transaction is associated</td>
+<td align="center">UUID</td>
 </tr>
 <tr>
-<td align="center">created_at</td>
+<td align="center">emission_date</td>
 <td align="left">the instant when the transaction was created</td>
 <td align="center">ISO date/time</td>
 </tr>
 <tr>
-<td align="center">completed_at</td>
+<td align="center">update_date</td>
+<td align="left">the instant when the transaction was completed</td>
+<td align="center">ISO date/time</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h4 id="get-transaction">Get Transaction</h4>
+<p><em>This endpoint gives information about a specific transaction</em></p>
+<h5 id="request_10">Request</h5>
+<pre><code>GET /payment/&lt;payment_id&gt;/transactions/&lt;transaction_id&gt;
+</code></pre>
+<h5 id="response_11">Response</h5>
+<p><strong>Content-Type</strong> : application/json</p>
+<table>
+<thead>
+<tr>
+<th align="center">Field</th>
+<th align="left">Description</th>
+<th align="center">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">id</td>
+<td align="left">the ID of the created transaction</td>
+<td align="center">UUID</td>
+</tr>
+<tr>
+<td align="center">amount</td>
+<td align="left">The amount of the transaction</td>
+<td align="center">Decimal</td>
+</tr>
+<tr>
+<td align="center">state</td>
+<td align="left">the transaction state: <em>completed</em>, <em>declined</em> or <em>failed</em></td>
+<td align="center">Text</td>
+</tr>
+<tr>
+<td align="center">id_payment</td>
+<td align="left">The id of the payment which the transaction is associated</td>
+<td align="center">UUID</td>
+</tr>
+<tr>
+<td align="center">emission_date</td>
+<td align="left">the instant when the transaction was created</td>
+<td align="center">ISO date/time</td>
+</tr>
+<tr>
+<td align="center">update_date</td>
 <td align="left">the instant when the transaction was completed</td>
 <td align="center">ISO date/time</td>
 </tr>
@@ -462,6 +635,8 @@
 </tr>
 </tbody>
 </table>
+<h2 id="general-response">General Response</h2>
+<p>All response messages has the fields 'code' and 'response'. The code is the type HTTP Status, and the response always return a 'status' and a body message when necessary. </p>
 </div>
 </div>
 <footer>

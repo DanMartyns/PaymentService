@@ -25,14 +25,16 @@ This endpoint creates one account.
 | currency      | the account currency                           | 3-letter ISO currency code |
 
 
-##### Response 
+##### Response
+
+**Content-Type** : application/json
 
 | Field         | Description                                    | Format                     |
 |:-------------:|:---------------------------------------------- |:--------------------------:|
 | id            | the account ID                                 | UUID                       |
-| user_id       | the user ID                                    | UUID                       |  
+| user_id       | the user ID                                    | UUID                       |
+| currency      | the account currency                           | 3-letter ISO currency code |  
 | balance       | the available balance                          | Decimal                    |
-| currency      | the account currency                           | 3-letter ISO currency code |
 | state         | the account state, one of _active_, _inactive_ | Boolean                    |
 | created_at    | the instant when the account was created       | ISO date/time              |
 | updated_at    | the instant when the account was last updated  | ISO date/time              |
@@ -40,6 +42,8 @@ This endpoint creates one account.
 --------
 
 #### Add Amount
+
+ *This endpoint permits add an amount to an account*
 
 ##### Request
 
@@ -52,36 +56,66 @@ This endpoint creates one account.
 |:-------------:|:---------------------------------------------- |:--------------------------:|
 | amount        | amount to add to account                       | Decimal                    |
 
+##### Response
+
+**Content-Type** : application/json
+
+[General Response]
+
 --------
 
 #### Activate Account
+
+ *This endpoints activate an account*
 
 ##### Request
 
     POST /account/<id>/activate
 
+##### Response
 
 **Content-Type** : application/json
 
-
-| Field         | Description                                    | Format                     |
-|:-------------:|:---------------------------------------------- |:--------------------------:|
-| state         | the account state, one of _active_, _inactive_ | Boolean                    |
+[General Response]
 
 --------
 
 #### Desactivate Account
 
+*This endpoints desactivate an account*
+
 ##### Request
 
     POST /account/<id>/desactivate
 
+##### Response
+
+**Content-Type** : application/json
+
+[General Response]
+
+--------
+
+#### Account Information
+
+ *This endpoint gives information about an account*
+#### Resquest
+
+    GET /account/<id>
+
+#### Response
 
 **Content-Type** : application/json
 
 | Field         | Description                                    | Format                     |
 |:-------------:|:---------------------------------------------- |:--------------------------:|
+| id            | the account ID                                 | UUID                       |
+| user_id       | the user ID                                    | UUID                       |
+| currency      | the account currency                           | 3-letter ISO currency code |  
+| balance       | the available balance                          | Decimal                    |
 | state         | the account state, one of _active_, _inactive_ | Boolean                    |
+| created_at    | the instant when the account was created       | ISO date/time              |
+| updated_at    | the instant when the account was last updated  | ISO date/time              |  
 
 ## Payment
 
@@ -100,7 +134,7 @@ This endpoint creates one account.
 
 ##### Request
 
-    POST /pay
+    POST account/id/payment
 
 **Content-Type** : application/json
 
@@ -111,35 +145,91 @@ This endpoint creates one account.
 | Field           | Description                                                   | Format                     |
 |:-------------:  |:----------------------------------------------                |:--------------------------:|
 | request_id	  | the client provided ID of the transaction (40 characters max) |	Text                       |  
-| account_id	  | the ID of the account to pay from                             |	UUID                       |
-| receiving_id    |	the ID of the receiving account                               |	UUID                       |
-| amount          |	the transaction amount                                        |	Decimal                    |
+| seller_id    |	the ID of the receiving account                               |	UUID                       |
 | currency        |	the transaction currency                                      |	3-letter ISO currency code |
 | reference       |	an optional textual reference shown on the transaction        | Text                       |
 
 ##### Response
 
+**Content-Type** : application/json
+
 | Field         | Description                                                           | Format                     |
 |:-------------:|:----------------------------------------------                        | :-------------------------:|
-| id            | the ID of the created transaction                                     |	UUID                     |
-| state	        | the transaction state: *pending*, *failed*                            |	Text                     |
-| reason_code   | reason code for *failed* transaction state                            |	Text                     |
-| created_at    | the instant when the transaction was created	                        | ISO date/time              |
-| completed_at	| the instant when the transaction was completed                        | ISO date/time              |
+| id            | the ID of the created payment                                     |	UUID                     |
 
 --------
 
-#### Get Transactions
+#### Get Payments
 
-*This endpoint receives a payment.*
+*This endpoint list all payments made by an account.*
 
 ##### Request
 
-    GET /pay
+    GET /account/<id>/payments
+
+#### Response
 
 **Content-Type** : application/json
 
-[No Body]
+| Field           | Description                                                   | Format                     |
+|:-------------:  |:----------------------------------------------                |:--------------------------:|
+| id	          | The payment id                                                |	Text                       |  
+| request_id	  | the client provided ID of the transaction (40 characters max) |	Text                       |  
+| seller_id       |	the ID of the receiving account                               |	UUID                       |
+| created_at      | The date when the payment was created                         | ISO date/time              |
+| currency        |	the transaction currency                                      |	3-letter ISO currency code |
+| amount          | The value of the payment                                      | Decimal                    |
+| state           | The state of the payment 'pending, completed or cancelled'    | Text                       |
+| reference       |	an optional textual reference shown on the transaction        | Text                       |
+--------
+
+#### Create Transaction
+
+*This endpoint creates a transaction associated with a payment*
+
+##### Request
+
+    POST /payment/<id>/transactions
+
+**Content-Type** : application/json
+
+
+| Field         | Description                                                   | Format                     |
+|:-------------:|:----------------------------------------------                |:--------------------------:|
+| amount        | amount to add to account                                      | Decimal                    |
+| reference     | an optional textual reference shown on the transaction        | Text                       |
+
+#### Response
+
+**Content-Type** : application/json
+
+| Field         | Description                                   | Format                     |
+|:-------------:|:----------------------------------------------| :-------------------------:|
+| id            | the ID of the created transaction             | UUID                       |
+
+----
+
+#### Cancel Transaction
+
+ *This endpoint cancel a transaction associated with a payment*
+
+ ##### Request
+
+    POST /payment/<payment_id>/transactions/<transaction_id>/cancel
+
+#### Execute the payment
+
+ *This endpoint*
+
+#### Request
+
+    POST /payment/<id>/execute
+
+##### Response
+
+**Content-Type** : application/json
+
+[General Response]
 
 --------
 
@@ -149,24 +239,58 @@ This endpoint creates one account.
 
 ##### Request
 
-    POST /pay/auth
+    POST /payment/<id>/authorize
+
+##### Response
+
+**Content-Type** : application/json
+
+[General Response]
+
+--------
+
+#### Get transactions
+
+ *This endpoint give all the transactions information*
+
+##### Request
+
+    GET /payment/<id>/transactions
+
+##### Response
 
 **Content-Type** : application/json
 
 | Field         | Description                                                           | Format                     |
 |:-------------:|:----------------------------------------------                        | :-------------------------:|
-| id            | the ID of the previously created transaction                          |	UUID                     |
-| state	        | the transaction state: *accepted*, *declined*                         |	Boolean                  |
+| id            | the ID of the created transaction                                     |	UUID                     |
+| amount        | The amount of the transaction                                         |   Decimal                  |
+| state	        | the transaction state: *completed*, *declined* or *failed*            |	Text                     |
+| id_payment    | The id of the payment which the transaction is associated             |	UUID                     |
+| emission_date | the instant when the transaction was created	                        | ISO date/time              |
+| update_date	| the instant when the transaction was completed                        | ISO date/time              |
 
-##### Response
+----
+
+#### Get Transaction
+
+ *This endpoint gives information about a specific transaction*
+
+##### Request
+    GET /payment/<payment_id>/transactions/<transaction_id>
+
+##### Response 
+
+**Content-Type** : application/json
 
 | Field         | Description                                                           | Format                     |
 |:-------------:|:----------------------------------------------                        | :-------------------------:|
 | id            | the ID of the created transaction                                     |	UUID                     |
+| amount        | The amount of the transaction                                         |   Decimal                  |
 | state	        | the transaction state: *completed*, *declined* or *failed*            |	Text                     |
-| reason_code   | reason code for *declined* or *failed* transaction state              |	Text                     |
-| created_at    | the instant when the transaction was created	                        | ISO date/time              |
-| completed_at	| the instant when the transaction was completed                        | ISO date/time              |
+| id_payment    | The id of the payment which the transaction is associated             |	UUID                     |
+| emission_date | the instant when the transaction was created	                        | ISO date/time              |
+| update_date	| the instant when the transaction was completed                        | ISO date/time              |
 
 ## Errors
 
@@ -184,3 +308,6 @@ The API uses the following error codes:
 | 500  |	Internal Server Error -- We had a problem with our server. Try again later.              |
 | 503  |	Service Unavailable -- We're temporarily offline for maintenance. Please try again later.|
 
+## General Response
+
+All response messages has the fields 'code' and 'response'. The code is the type HTTP Status, and the response always return a 'status' and a body message when necessary. 

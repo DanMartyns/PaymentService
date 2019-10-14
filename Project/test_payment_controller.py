@@ -45,8 +45,8 @@ print("************ Create a payment ****************")
 # Create a payment
 request_id = "bilhete" # String identificating the product
 reference = "Bilhete entre Porto e Lisboa" # A Product Description 
-data  = "{\"request_id\" : \""+request_id+"\",\"buyer_id\" : \""+buyer+"\",\"seller_id\" : \""+seller+"\",\"currency\" : \"EUR\",\"reference\" : \""+reference+"\"}"
-response = requests.post('http://0.0.0.0:5000/payment', headers=headers, data=data)
+data  = "{\"request_id\" : \""+request_id+"\",\"seller_id\" : \""+seller+"\",\"currency\" : \"EUR\",\"reference\" : \""+reference+"\"}"
+response = requests.post('http://0.0.0.0:5000/account/'+buyer+'/payment', headers=headers, data=data)
 
 payment = response.json()['message']['id']
 print("Payment id : ",payment)

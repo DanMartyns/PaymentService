@@ -70,9 +70,9 @@ def add_amount(id):
         Add an amount to an account
 
         :param id: The id of the account to be fetched
-            :type id: int
+        :type id: int
 
-            :rtype: dict | bytes
+        :rtype: dict | bytes
     """
 
     code = HTTPStatus.OK

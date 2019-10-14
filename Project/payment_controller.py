@@ -10,8 +10,8 @@ import uuid
 payment_controller = Blueprint('payment', __name__,)
 
 
-@payment_controller.route('/payment', methods=['POST'])
-def create_payment():
+@payment_controller.route('/account/<uuid:id>/payment', methods=['POST'])
+def create_payment(id):
     """
         Make a payment
 
@@ -25,26 +25,25 @@ def create_payment():
     try:
         # Get parameters
         request_id = request.json.get('request_id')
-        buyer_id = uuid.UUID(uuid.UUID(request.json.get('buyer_id')).hex) 
         seller_id = uuid.UUID(uuid.UUID(request.json.get('seller_id')).hex) 
         currency = request.json.get('currency').upper()
         reference = request.json.get('reference')
 
         # Check if there is some missing argument
-        if not request_id or not buyer_id or not seller_id or not currency or not reference:
+        if not request_id or not seller_id or not currency or not reference:
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Missing arguments")
 
         # Flag to check if account exists
-        buyer = Account.query.get(buyer_id)
+        buyer = Account.query.get(id)
         receiver = Account.query.get(seller_id)        
 
         # Validate parameters
-        if not aux.validate_uuid(buyer_id) or not aux.validate_uuid(seller_id) or not buyer or not receiver:
+        if not aux.validate_uuid(id) or not aux.validate_uuid(seller_id) or not buyer or not receiver:
             code = HTTPStatus.BAD_REQUEST
             raise Exception("Your number account or the number receiver account is wrong or they don't exist")
 
-        account = Account.query.get(buyer_id)
+        account = Account.query.get(id)
 
         # Check if the currency is valid
         if not isinstance(Currency(currency), Currency):
@@ -56,7 +55,7 @@ def create_payment():
 
     # Save the state of the payment
     # Everytime that we create a payment, his state is "pending"
-    payment = Payment(request_id, buyer_id, seller_id, Currency(currency), reference)
+    payment = Payment(request_id, id, seller_id, Currency(currency), reference)
     db.session.add(payment)
     db.session.commit()
 
@@ -106,7 +105,6 @@ def get_payments(user_id):
         payment_data = {
             'id': payment.id,
             'request' : payment.request_id,
-            'buyer' : payment.account_id,
             'seller' : payment.receiver_id,
             'created_at' : payment.created_at,
             'state': payment.state.name,            

@@ -51,8 +51,6 @@
 <li><a class="toctree-l3" href="#activate-account">Activate Account</a></li>
 <li><a class="toctree-l3" href="#desactivate-account">Desactivate Account</a></li>
 <li><a class="toctree-l3" href="#account-information">Account Information</a></li>
-<li><a class="toctree-l3" href="#resquest">Resquest</a></li>
-<li><a class="toctree-l3" href="#response_4">Response</a></li>
 </ul>
 <li class="toctree-l2"><a href="#payment">Payment</a></li>
 <ul>
@@ -60,10 +58,8 @@
 <li><a class="toctree-l3" href="#get-payments">Get Payments</a></li>
 <li><a class="toctree-l3" href="#response_6">Response</a></li>
 <li><a class="toctree-l3" href="#create-transaction">Create Transaction</a></li>
-<li><a class="toctree-l3" href="#response_7">Response</a></li>
 <li><a class="toctree-l3" href="#cancel-transaction">Cancel Transaction</a></li>
 <li><a class="toctree-l3" href="#execute-the-payment">Execute the payment</a></li>
-<li><a class="toctree-l3" href="#request_7">Request</a></li>
 <li><a class="toctree-l3" href="#authorization-payment">Authorization payment</a></li>
 <li><a class="toctree-l3" href="#get-transactions">Get transactions</a></li>
 <li><a class="toctree-l3" href="#get-transaction">Get Transaction</a></li>
@@ -237,10 +233,10 @@
 <hr/>
 <h4 id="account-information">Account Information</h4>
 <p><em>This endpoint gives information about an account</em></p>
-<h4 id="resquest">Resquest</h4>
+<h5 id="resquest">Resquest</h5>
 <pre><code>GET /account/&lt;id&gt;
 </code></pre>
-<h4 id="response_4">Response</h4>
+<h5 id="response_4">Response</h5>
 <p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
@@ -448,7 +444,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="response_7">Response</h4>
+<h5 id="response_7">Response</h5>
 <p><strong>Content-Type</strong> : application/json</p>
 <table>
 <thead>
@@ -469,12 +465,12 @@
 <hr/>
 <h4 id="cancel-transaction">Cancel Transaction</h4>
 <p><em>This endpoint cancel a transaction associated with a payment</em></p>
-<p>##### Request</p>
+<h5 id="request_7">Request</h5>
 <pre><code>POST /payment/&lt;payment_id&gt;/transactions/&lt;transaction_id&gt;/cancel
 </code></pre>
 <h4 id="execute-the-payment">Execute the payment</h4>
 <p><em>This endpoint</em></p>
-<h4 id="request_7">Request</h4>
+<h5 id="request_8">Request</h5>
 <pre><code>POST /payment/&lt;id&gt;/execute
 </code></pre>
 <h5 id="response_8">Response</h5>
@@ -483,7 +479,7 @@
 <hr/>
 <h4 id="authorization-payment">Authorization payment</h4>
 <p><em>This endpoint creates a payment confirmation.</em></p>
-<h5 id="request_8">Request</h5>
+<h5 id="request_9">Request</h5>
 <pre><code>POST /payment/&lt;id&gt;/authorize
 </code></pre>
 <h5 id="response_9">Response</h5>
@@ -492,7 +488,7 @@
 <hr/>
 <h4 id="get-transactions">Get transactions</h4>
 <p><em>This endpoint give all the transactions information</em></p>
-<h5 id="request_9">Request</h5>
+<h5 id="request_10">Request</h5>
 <pre><code>GET /payment/&lt;id&gt;/transactions
 </code></pre>
 <h5 id="response_10">Response</h5>
@@ -541,7 +537,7 @@
 <hr/>
 <h4 id="get-transaction">Get Transaction</h4>
 <p><em>This endpoint gives information about a specific transaction</em></p>
-<h5 id="request_10">Request</h5>
+<h5 id="request_11">Request</h5>
 <pre><code>GET /payment/&lt;payment_id&gt;/transactions/&lt;transaction_id&gt;
 </code></pre>
 <h5 id="response_11">Response</h5>

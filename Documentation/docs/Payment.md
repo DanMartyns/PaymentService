@@ -1,122 +1,5 @@
 Page last revised on: {{ git_revision_date }}
 
-## Account
-
-#### Create Account
-
-This endpoint creates one account. 
-
-!!! note
-    At the moment of creating an account, an outsourcing already offers a unique identifying ID that identifies the user. You only need to match this ID to an account.
-
-!!! warning 
-    If the external source is a social network, for example, a user can sign in with Facebook or Instagram and this generates 2 different users.
-
-##### Request
-
-    POST /account
-
-**Content-Type** : application/json
-
-
-| Field         | Description                                    | Format                     |
-|:-------------:|:---------------------------------------------- |:--------------------------:|
-| user_id       | the user ID                                    | UUID                       | 
-| currency      | the account currency                           | 3-letter ISO currency code |
-
-
-##### Response
-
-**Content-Type** : application/json
-
-| Field         | Description                                    | Format                     |
-|:-------------:|:---------------------------------------------- |:--------------------------:|
-| id            | the account ID                                 | UUID                       |
-| user_id       | the user ID                                    | UUID                       |
-| currency      | the account currency                           | 3-letter ISO currency code |  
-| balance       | the available balance                          | Decimal                    |
-| state         | the account state, one of _active_, _inactive_ | Boolean                    |
-| created_at    | the instant when the account was created       | ISO date/time              |
-| updated_at    | the instant when the account was last updated  | ISO date/time              |
-
---------
-
-#### Add Amount
-
- *This endpoint permits add an amount to an account*
-
-##### Request
-
-    POST /account/<id>/amount
-
-**Content-Type** : application/json
-
-
-| Field         | Description                                    | Format                     |
-|:-------------:|:---------------------------------------------- |:--------------------------:|
-| amount        | amount to add to account                       | Decimal                    |
-
-##### Response
-
-**Content-Type** : application/json
-
-[General Response]
-
---------
-
-#### Activate Account
-
- *This endpoints activate an account*
-
-##### Request
-
-    POST /account/<id>/activate
-
-##### Response
-
-**Content-Type** : application/json
-
-[General Response]
-
---------
-
-#### Desactivate Account
-
-*This endpoints desactivate an account*
-
-##### Request
-
-    POST /account/<id>/desactivate
-
-##### Response
-
-**Content-Type** : application/json
-
-[General Response]
-
---------
-
-#### Account Information
-
- *This endpoint gives information about an account*
-#### Resquest
-
-    GET /account/<id>
-
-#### Response
-
-**Content-Type** : application/json
-
-| Field         | Description                                    | Format                     |
-|:-------------:|:---------------------------------------------- |:--------------------------:|
-| id            | the account ID                                 | UUID                       |
-| user_id       | the user ID                                    | UUID                       |
-| currency      | the account currency                           | 3-letter ISO currency code |  
-| balance       | the available balance                          | Decimal                    |
-| state         | the account state, one of _active_, _inactive_ | Boolean                    |
-| created_at    | the instant when the account was created       | ISO date/time              |
-| updated_at    | the instant when the account was last updated  | ISO date/time              |  
-
 ## Payment
 
 > All incoming and outgoing payments are represented as transactions and are processed in two stages from the user's perspective:
@@ -167,7 +50,7 @@ This endpoint creates one account.
 
     GET /account/<id>/payments
 
-#### Response
+##### Response
 
 **Content-Type** : application/json
 
@@ -199,7 +82,7 @@ This endpoint creates one account.
 | amount        | amount to add to account                                      | Decimal                    |
 | reference     | an optional textual reference shown on the transaction        | Text                       |
 
-#### Response
+##### Response
 
 **Content-Type** : application/json
 
@@ -213,7 +96,7 @@ This endpoint creates one account.
 
  *This endpoint cancel a transaction associated with a payment*
 
- ##### Request
+##### Request
 
     POST /payment/<payment_id>/transactions/<transaction_id>/cancel
 
@@ -221,7 +104,7 @@ This endpoint creates one account.
 
  *This endpoint*
 
-#### Request
+##### Request
 
     POST /payment/<id>/execute
 
@@ -291,23 +174,3 @@ This endpoint creates one account.
 | id_payment    | The id of the payment which the transaction is associated             |	UUID                     |
 | emission_date | the instant when the transaction was created	                        | ISO date/time              |
 | update_date	| the instant when the transaction was completed                        | ISO date/time              |
-
-## Errors
-
-The API uses the following error codes:
-
-| Code |	                                 Meaning                                                 |
-|------| --------------------------------------------------------------------------------------------|
-| 400  |	Bad Request -- Your request is invalid.                                                  |
-| 401  |	Unauthorized -- Your API key is wrong.                                                   |
-| 403  |	Forbidden -- Access to the requested resource or action is forbidden.                    |
-| 404  |	Not Found -- The requested resource could not be found.                                  |
-| 405  |	Method Not Allowed -- You tried to access an endpoint with an invalid method.            |
-| 406  |	Not Acceptable -- You requested a format that isn't JSON.                                |
-| 429  |	Too Many Requests -- You're sending too many requests.                                   |
-| 500  |	Internal Server Error -- We had a problem with our server. Try again later.              |
-| 503  |	Service Unavailable -- We're temporarily offline for maintenance. Please try again later.|
-
-## General Response
-
-All response messages has the fields 'code' and 'response'. The code is the type HTTP Status, and the response always return a 'status' and a body message when necessary. 

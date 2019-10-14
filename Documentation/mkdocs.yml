@@ -12,11 +12,14 @@ plugins:
         combined : true      
 
 nav:
-- Home : index.md
-- API Operations : apiOperations.md
+- Home : Index.md
+- API Operations : 
+  - API : ApiOperations.md
+  - Account : Account.md
+  - Payment : Payment.md
 - Thoughts and decisions : 
-    - 'Gunicorn' : 'gunicorn.md'
-- About : about.md
+    - 'Gunicorn' : 'Gunicorn.md'
+- About : About.md
 theme: readthedocs
 
 extra_javascript:
@@ -49,5 +52,4 @@ markdown_extensions:
 
 extra_css:
   - https://unpkg.com/mermaid@7.1.2/dist/mermaid.css
-extra_javascript:
 

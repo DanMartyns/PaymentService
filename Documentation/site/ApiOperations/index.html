@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="Daniel Martins" name="author"/>
 <link href="../img/favicon.ico" rel="shortcut icon"/>
-<title>About - Payment Service</title>
+<title>API - Payment Service</title>
 <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" rel="stylesheet" type="text/css"/>
 <link href="../css/theme.css" rel="stylesheet" type="text/css">
 <link href="../css/theme_extra.css" rel="stylesheet" type="text/css">
@@ -16,8 +16,8 @@
 <link href="https://unpkg.com/mermaid@7.1.2/dist/mermaid.css" rel="stylesheet"/>
 <script>
     // Current page data
-    var mkdocs_page_name = "About";
-    var mkdocs_page_input_path = "about.md";
+    var mkdocs_page_name = "API";
+    var mkdocs_page_input_path = "ApiOperations.md";
     var mkdocs_page_url = null;
   </script>
 <script defer="" src="../js/jquery-2.1.1.min.js"></script>
@@ -39,24 +39,36 @@
 <div aria-label="main navigation" class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation">
 <ul class="current">
 <li class="toctree-l1">
-<a class="" href="..">Home</a>
+<a class="" href="../Index/">Home</a>
 </li>
 <li class="toctree-l1">
-<a class="" href="../apiOperations/">API Operations</a>
+<span class="caption-text">API Operations</span>
+<ul class="subnav">
+<li class="current">
+<a class="current" href="./">API</a>
+<ul class="subnav">
+<li class="toctree-l3"><a href="#general-response">General Response</a></li>
+<li class="toctree-l3"><a href="#errors">Errors</a></li>
+</ul>
+</li>
+<li class="">
+<a class="" href="../Account/">Account</a>
+</li>
+<li class="">
+<a class="" href="../Payment/">Payment</a>
+</li>
+</ul>
 </li>
 <li class="toctree-l1">
 <span class="caption-text">Thoughts and decisions</span>
 <ul class="subnav">
 <li class="">
-<a class="" href="../gunicorn/">Gunicorn</a>
+<a class="" href="../Gunicorn/">Gunicorn</a>
 </li>
 </ul>
 </li>
-<li class="toctree-l1 current">
-<a class="current" href="./">About</a>
-<ul class="subnav">
-<li class="toctree-l2"><a href="#about">About</a></li>
-</ul>
+<li class="toctree-l1">
+<a class="" href="../About/">About</a>
 </li>
 </ul>
 </div>
@@ -72,7 +84,8 @@
 <div aria-label="breadcrumbs navigation" role="navigation">
 <ul class="wy-breadcrumbs">
 <li><a href="..">Docs</a> »</li>
-<li>About</li>
+<li>API Operations »</li>
+<li>API</li>
 <li class="wy-breadcrumbs-aside">
 </li>
 </ul>
@@ -80,14 +93,63 @@
 </div>
 <div role="main">
 <div class="section">
-<h1 id="about">About</h1>
-<p><img alt="Author" src="../img/author.jpg" title="Daniel Martins"/>
-My name is Daniel Martins. I am in the last year of Integrated Master of Computers and Telematics.</p>
+<p>Page last revised on: 2019-10-14</p>
+<h2 id="general-response">General Response</h2>
+<p>All response messages has the fields 'code' and 'response'. The code is the type HTTP Status, and the response always return a 'status' and a body message when necessary. </p>
+<h2 id="errors">Errors</h2>
+<p>The API uses the following error codes:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td>Bad Request -- Your request is invalid.</td>
+</tr>
+<tr>
+<td>401</td>
+<td>Unauthorized -- Your API key is wrong.</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Forbidden -- Access to the requested resource or action is forbidden.</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Not Found -- The requested resource could not be found.</td>
+</tr>
+<tr>
+<td>405</td>
+<td>Method Not Allowed -- You tried to access an endpoint with an invalid method.</td>
+</tr>
+<tr>
+<td>406</td>
+<td>Not Acceptable -- You requested a format that isn't JSON.</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Too Many Requests -- You're sending too many requests.</td>
+</tr>
+<tr>
+<td>500</td>
+<td>Internal Server Error -- We had a problem with our server. Try again later.</td>
+</tr>
+<tr>
+<td>503</td>
+<td>Service Unavailable -- We're temporarily offline for maintenance. Please try again later.</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <footer>
 <div aria-label="footer navigation" class="rst-footer-buttons" role="navigation">
-<a class="btn btn-neutral" href="../gunicorn/" title="Gunicorn"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+<a class="btn btn-neutral float-right" href="../Account/" title="Account">Next <span class="icon icon-circle-arrow-right"></span></a>
+<a class="btn btn-neutral" href="../Index/" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
 </div>
 <hr/>
 <div role="contentinfo">
@@ -103,11 +165,14 @@ My name is Daniel Martins. I am in the last year of Integrated Master of Compute
 </div>
 <div class="rst-versions" role="note" style="cursor: pointer">
 <span class="rst-current-version" data-toggle="rst-current-version">
-<span><a href="../gunicorn/" style="color: #fcfcfc;">« Previous</a></span>
+<span><a href="../Index/" style="color: #fcfcfc;">« Previous</a></span>
+<span style="margin-left: 15px"><a href="../Account/" style="color: #fcfcfc">Next »</a></span>
 </span>
 </div>
 <script>var base_url = '..';</script>
 <script defer="" src="../js/theme.js"></script>
+<script defer="" src="https://cdn.jsdelivr.net/npm/wavedrom@2.1.2/wavedrom.unpkg.js"></script>
+<script defer="" src="https://wavedrom.com/skins/default.js"></script>
 <script defer="" src="../search/main.js"></script>
 </body>
 </html>

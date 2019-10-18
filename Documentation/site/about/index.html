@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="Daniel Martins" name="author"/>
 <link href="../img/favicon.ico" rel="shortcut icon"/>
-<title>Home - Payment Service</title>
+<title>About - Payment Service</title>
 <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" rel="stylesheet" type="text/css"/>
 <link href="../css/theme.css" rel="stylesheet" type="text/css">
 <link href="../css/theme_extra.css" rel="stylesheet" type="text/css">
@@ -16,8 +16,8 @@
 <link href="https://unpkg.com/mermaid@7.1.2/dist/mermaid.css" rel="stylesheet"/>
 <script>
     // Current page data
-    var mkdocs_page_name = "Home";
-    var mkdocs_page_input_path = "Index.md";
+    var mkdocs_page_name = "About";
+    var mkdocs_page_input_path = "about.md";
     var mkdocs_page_url = null;
   </script>
 <script defer="" src="../js/jquery-2.1.1.min.js"></script>
@@ -38,28 +38,20 @@
 </div>
 <div aria-label="main navigation" class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation">
 <ul class="current">
-<li class="toctree-l1 current">
-<a class="current" href="./">Home</a>
-<ul class="subnav">
-<li class="toctree-l2"><a href="#setup">Setup</a></li>
-<ul>
-<li><a class="toctree-l3" href="#purpose-and-scope">Purpose and Scope</a></li>
-<li><a class="toctree-l3" href="#project-structure">Project Structure</a></li>
-<li><a class="toctree-l3" href="#how-to-initiate">How to initiate?</a></li>
-</ul>
-</ul>
+<li class="toctree-l1">
+<a class="" href="..">Home</a>
 </li>
 <li class="toctree-l1">
 <span class="caption-text">API Operations</span>
 <ul class="subnav">
 <li class="">
-<a class="" href="../ApiOperations/">API</a>
+<a class="" href="../apiOperations/">API</a>
 </li>
 <li class="">
-<a class="" href="../Account/">Account</a>
+<a class="" href="../account/">Account</a>
 </li>
 <li class="">
-<a class="" href="../Payment/">Payment</a>
+<a class="" href="../payment/">Payment</a>
 </li>
 </ul>
 </li>
@@ -67,12 +59,15 @@
 <span class="caption-text">Thoughts and decisions</span>
 <ul class="subnav">
 <li class="">
-<a class="" href="../Gunicorn/">Gunicorn</a>
+<a class="" href="../gunicorn/">Gunicorn</a>
 </li>
 </ul>
 </li>
-<li class="toctree-l1">
-<a class="" href="../About/">About</a>
+<li class="toctree-l1 current">
+<a class="current" href="./">About</a>
+<ul class="subnav">
+<li class="toctree-l2"><a href="#about">About</a></li>
+</ul>
 </li>
 </ul>
 </div>
@@ -88,7 +83,7 @@
 <div aria-label="breadcrumbs navigation" role="navigation">
 <ul class="wy-breadcrumbs">
 <li><a href="..">Docs</a> »</li>
-<li>Home</li>
+<li>About</li>
 <li class="wy-breadcrumbs-aside">
 </li>
 </ul>
@@ -96,53 +91,20 @@
 </div>
 <div role="main">
 <div class="section">
-<h1 id="setup">Setup</h1>
-<h2 id="purpose-and-scope">Purpose and Scope</h2>
-<p>The purpose of this site is document a Payment Service. It is a service made for the discipline of Service Engineering, Computer Engineering and Telematics course at the University of Aveiro.</p>
-<p>This service contemples just a generation and management of an account and the payments made by this account.</p>
-<p>In the API TAB has a description of the methods of API. 
-In the Thoughts and Decisions TAB has some publications to justify why was made a specific choice for a specific point in API</p>
-<h2 id="project-structure">Project Structure</h2>
-<pre><code>mkdocs.yml              # The configuration file.
-docs/
-    index.md            # The documentation homepage.
-    Account.md          # The description about the account methods
-    Payment.md          # The description about the payment methods
-    apiOperations.md    # Some considerations about the API
-    About.md            # Some points about the author of the Service
-    Gunicorn            # The file descriving why using gunicorn
-    img/                # A folder with the images used in the documentation
-</code></pre>
-<h2 id="how-to-initiate">How to initiate?</h2>
-<h3 id="conventional">Conventional</h3>
-<h4 id="create-a-virtual-environment">Create a virtual environment</h4>
-<div class="highlight"><pre><span></span>    sudo pip install virtualenv
-    virtualenv venv --python<span class="o">=</span>python3
-    <span class="nb">source</span> venv/bin/activate
-</pre></div>
-<h4 id="install-the-requirements">Install the requirements</h4>
-<div class="highlight"><pre><span></span>    pip install -r requirements.pip
-</pre></div>
-<h4 id="initiate-the-gunicorn">Initiate the Gunicorn</h4>
-<p>In the file PaymentService.py, you can change the exposed port for the database
-<div class="highlight"><pre><span></span>    gunicorn PaymentService:app -b <span class="m">0</span>.0.0.0:6000
-</pre></div></p>
-<h3 id="docker">Docker</h3>
-<p>You must install docker and docker-compose</p>
-<p>Into the folder "Project" run the command :
-<div class="highlight"><pre><span></span>docker-compose up
-</pre></div></p>
-<p>If you want run the containers in the background, change the command to:
-<div class="highlight"><pre><span></span>docker-compose up -d
-</pre></div>
-To stop the containers, inside the Project folder, run the command:
-<div class="highlight"><pre><span></span>docker-compose stop
-</pre></div></p>
+<h1 id="about">About</h1>
+<p><a href="https://danmartyns.github.io/danielMartins.github.io/"><img alt="author" src="../img/author.png"/></a></p>
+<p>My name is Daniel Martins. I am in the last year of Integrated Master of Computers and Telematics.</p>
+<p>Follow me on : 
+<a href="https://www.facebook.com/daniel.martins.771"><img alt="Facebook" src="../img/assets/facebook.png"/></a> Facebook
+<a href="https://www.linkedin.com/in/daniel-martins-4a013a195/"><img alt="Linkedin" src="../img/assets/linkedin.png"/></a> Linkedin
+<a href="https://danielmartinsmusic.tumblr.com"><img alt="Tumblr" src="../img/assets/tumblr.png"/></a> Tumblr
+<a href="https://www.instagram.com/daniel.martyns/"><img alt="Tumblr" src="../img/assets/instagram.png"/></a> Instagram
+<a href="https://github.com/DanMartyns"><img alt="Github" src="../img/assets/github.png"/></a> Github</p>
 </div>
 </div>
 <footer>
 <div aria-label="footer navigation" class="rst-footer-buttons" role="navigation">
-<a class="btn btn-neutral float-right" href="../ApiOperations/" title="API">Next <span class="icon icon-circle-arrow-right"></span></a>
+<a class="btn btn-neutral" href="../gunicorn/" title="Gunicorn"><span class="icon icon-circle-arrow-left"></span> Previous</a>
 </div>
 <hr/>
 <div role="contentinfo">
@@ -158,7 +120,7 @@ To stop the containers, inside the Project folder, run the command:
 </div>
 <div class="rst-versions" role="note" style="cursor: pointer">
 <span class="rst-current-version" data-toggle="rst-current-version">
-<span style="margin-left: 15px"><a href="../ApiOperations/" style="color: #fcfcfc">Next »</a></span>
+<span><a href="../gunicorn/" style="color: #fcfcfc;">« Previous</a></span>
 </span>
 </div>
 <script>var base_url = '..';</script>

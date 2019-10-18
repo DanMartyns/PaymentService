@@ -1,11 +1,20 @@
+# Project/models.py
+
 import uuid
 import enum
+import jwt
+import os
 import datetime
 from iso4217 import Currency
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
+bcrypt = Bcrypt()
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'my_precious')
+BCRYPT_LOG_ROUNDS = 13
 
 
 class PaymentState(enum.Enum):
@@ -22,7 +31,6 @@ class TransactionState(enum.Enum):
     cancelled = "cancelled"
 
 # MODELS
-
 
 class BaseModel(db.Model):
     """
@@ -50,6 +58,31 @@ class BaseModel(db.Model):
             for column, value in self._to_dict().items()
         }
 
+class Active_Sessions(BaseModel, db.Model):
+    """
+        Token Model for storing JWT tokens
+    """
+    __tablename__ = 'active_sessions'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(500), unique=True, nullable=False)
+    emission_at = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, token):
+        self.token = token
+        self.emission_at = datetime.datetime.now()
+
+    def __repr__(self):
+        return '<id: token: {}'.format(self.token)
+
+    @staticmethod
+    def check_active_session(auth_token):
+        # check whether auth token has been blacklisted
+        res = Active_Sessions.query.filter_by(token=str(auth_token)).first()
+        if res:
+            return True
+        else:
+            return False
 
 class Account(BaseModel, db.Model):
     """
@@ -72,18 +105,57 @@ class Account(BaseModel, db.Model):
     # The date when the information account was updated
     updated_at = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, user_id, currency):
+    def __init__(self, user_id, password, currency):
         self.user_id = user_id
+        self.password = bcrypt.generate_password_hash(password, BCRYPT_LOG_ROUNDS).decode()
         self.balance = 0.0
         self.currency = currency
         self.state = True
         self.created_at = self.updated_at = datetime.datetime.utcnow().isoformat()
 
+    def encode_auth_token(self):
+        """
+            Generates the Auth Token
+            :return: string
+        """
+        try:
+            payload = {
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
+                'iat': datetime.datetime.utcnow(),
+                'sub': str(self.id)
+            }
+            return jwt.encode(
+                payload,
+                SECRET_KEY,
+                algorithm='HS256'
+            )
+        except Exception as e:
+            return e
+    
+    @staticmethod
+    def decode_auth_token(auth_token):
+        """
+            Validates the auth token
+            :param auth_token:
+            :return: integer|string
+        """
+        try:
+            payload = jwt.decode(auth_token, SECRET_KEY)
+            is_active_token = Active_Sessions.check_active_session(auth_token)
+            if not is_active_token:
+                return 'Token invalid.'
+            else:
+                return uuid.UUID(uuid.UUID(payload['sub']).hex) 
+        except jwt.ExpiredSignatureError:
+            return 'Signature expired. Please log in again.'
+        except jwt.InvalidTokenError:
+            return 'Invalid token. Please log in again.'
+
 class Payment(BaseModel, db.Model):
     """
         Model for the payment table
     """
-    tablename__ = 'payment'
+    __tablename__ = 'payment'
 
     # The payment id
     id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
@@ -124,7 +196,7 @@ class Transaction(BaseModel, db.Model):
     """
         Model for the transactions table
     """
-    __tablename__ = 'transactions'
+    __tablename__ = 'transaction'
 
     # The id of the transaction
     id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), primary_key=True)
@@ -143,7 +215,7 @@ class Transaction(BaseModel, db.Model):
     
     payment = db.relationship("Payment", foreign_keys=id_payment)
 
-    def __init__(self, amount, id_payment,reference):
+    def __init__(self, amount, id_payment, reference):
         self.amount = amount
         self.emission_date = datetime.datetime.now()
         self.state = TransactionState.created

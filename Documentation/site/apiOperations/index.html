@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="Daniel Martins" name="author"/>
 <link href="../img/favicon.ico" rel="shortcut icon"/>
-<title>Gunicorn - Payment Service</title>
+<title>API - Payment Service</title>
 <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" rel="stylesheet" type="text/css"/>
 <link href="../css/theme.css" rel="stylesheet" type="text/css">
 <link href="../css/theme_extra.css" rel="stylesheet" type="text/css">
@@ -16,8 +16,8 @@
 <link href="https://unpkg.com/mermaid@7.1.2/dist/mermaid.css" rel="stylesheet"/>
 <script>
     // Current page data
-    var mkdocs_page_name = "Gunicorn";
-    var mkdocs_page_input_path = "Gunicorn.md";
+    var mkdocs_page_name = "API";
+    var mkdocs_page_input_path = "apiOperations.md";
     var mkdocs_page_url = null;
   </script>
 <script defer="" src="../js/jquery-2.1.1.min.js"></script>
@@ -39,35 +39,36 @@
 <div aria-label="main navigation" class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation">
 <ul class="current">
 <li class="toctree-l1">
-<a class="" href="../Index/">Home</a>
+<a class="" href="..">Home</a>
 </li>
 <li class="toctree-l1">
 <span class="caption-text">API Operations</span>
 <ul class="subnav">
-<li class="">
-<a class="" href="../ApiOperations/">API</a>
+<li class="current">
+<a class="current" href="./">API</a>
+<ul class="subnav">
+<li class="toctree-l3"><a href="#general-response">General Response</a></li>
+<li class="toctree-l3"><a href="#errors">Errors</a></li>
+</ul>
 </li>
 <li class="">
-<a class="" href="../Account/">Account</a>
+<a class="" href="../account/">Account</a>
 </li>
 <li class="">
-<a class="" href="../Payment/">Payment</a>
+<a class="" href="../payment/">Payment</a>
 </li>
 </ul>
 </li>
 <li class="toctree-l1">
 <span class="caption-text">Thoughts and decisions</span>
 <ul class="subnav">
-<li class="current">
-<a class="current" href="./">Gunicorn</a>
-<ul class="subnav">
-<li class="toctree-l3"><a href="#why-use-gunicorn-and-nginx">Why use Gunicorn and Nginx?</a></li>
-</ul>
+<li class="">
+<a class="" href="../gunicorn/">Gunicorn</a>
 </li>
 </ul>
 </li>
 <li class="toctree-l1">
-<a class="" href="../About/">About</a>
+<a class="" href="../about/">About</a>
 </li>
 </ul>
 </div>
@@ -83,8 +84,8 @@
 <div aria-label="breadcrumbs navigation" role="navigation">
 <ul class="wy-breadcrumbs">
 <li><a href="..">Docs</a> »</li>
-<li>Thoughts and decisions »</li>
-<li>Gunicorn</li>
+<li>API Operations »</li>
+<li>API</li>
 <li class="wy-breadcrumbs-aside">
 </li>
 </ul>
@@ -93,38 +94,62 @@
 <div role="main">
 <div class="section">
 <p>Page last revised on: 2019-10-14</p>
-<h4 id="why-use-gunicorn-and-nginx">Why use Gunicorn and Nginx?</h4>
-<p>Imagine if you had to do everything yourself with every new web application you build:</p>
-<ul>
-<li>Host static files</li>
-<li>Handle https connections</li>
-<li>Recover from crashes</li>
-<li>Make sure your application can scale up (via framework or your own code)</li>
-</ul>
-<p>That sounds like a lot of work. 
-And a lot of work which is the same across most web applications you might come up with.</p>
-<p><strong>This is good news!</strong> Because those problems are so common, you can build tools which take care of them. You don’t even need to put that functionality into your web framework of choice.</p>
-<p>Three common building blocks when deploying a Python web application to production are:</p>
-<ul>
-<li>A web server (like nginx)</li>
-<li>A WSGI (Web Server Gateway Inteface) application server (like Gunicorn)</li>
-<li>Your actual application (written using a developer-friendly framework like Django)</li>
-</ul>
-<p><img alt="service" src="../img/service.png"/></p>
-<p>The web server <em>accepts requests, takes care of general domain logic and takes care of handling https connections</em>. Only requests which are meant to arrive at the application are passed on toward the application server and the application itself. The application code does not care about anything except being able to process single requests.</p>
-<p>Gunicorn takes care of everything which happens in-between the web server and your web application. This way, when coding up your a Django application you don’t need to find your own solutions for:</p>
-<ul>
-<li>communicating with multiple web servers</li>
-<li>reacting to lots of web requests at once and distributing the load</li>
-<li>keepiung multiple processes of the web application running</li>
-</ul>
-<p>It's a good strategy running our Python Web Application in a WSGI Server. This way, deployment will be more stable, be able to handle more requests at once and be fast about it.</p>
+<h2 id="general-response">General Response</h2>
+<p>All response messages has the fields 'code' and 'response'. The code is the type HTTP Status, and the response always return a 'status' and a body message when necessary. </p>
+<h2 id="errors">Errors</h2>
+<p>The API uses the following error codes:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td>Bad Request -- Your request is invalid.</td>
+</tr>
+<tr>
+<td>401</td>
+<td>Unauthorized -- Your API key is wrong.</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Forbidden -- Access to the requested resource or action is forbidden.</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Not Found -- The requested resource could not be found.</td>
+</tr>
+<tr>
+<td>405</td>
+<td>Method Not Allowed -- You tried to access an endpoint with an invalid method.</td>
+</tr>
+<tr>
+<td>406</td>
+<td>Not Acceptable -- You requested a format that isn't JSON.</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Too Many Requests -- You're sending too many requests.</td>
+</tr>
+<tr>
+<td>500</td>
+<td>Internal Server Error -- We had a problem with our server. Try again later.</td>
+</tr>
+<tr>
+<td>503</td>
+<td>Service Unavailable -- We're temporarily offline for maintenance. Please try again later.</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <footer>
 <div aria-label="footer navigation" class="rst-footer-buttons" role="navigation">
-<a class="btn btn-neutral float-right" href="../About/" title="About">Next <span class="icon icon-circle-arrow-right"></span></a>
-<a class="btn btn-neutral" href="../Payment/" title="Payment"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+<a class="btn btn-neutral float-right" href="../account/" title="Account">Next <span class="icon icon-circle-arrow-right"></span></a>
+<a class="btn btn-neutral" href=".." title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
 </div>
 <hr/>
 <div role="contentinfo">
@@ -140,8 +165,8 @@ And a lot of work which is the same across most web applications you might come 
 </div>
 <div class="rst-versions" role="note" style="cursor: pointer">
 <span class="rst-current-version" data-toggle="rst-current-version">
-<span><a href="../Payment/" style="color: #fcfcfc;">« Previous</a></span>
-<span style="margin-left: 15px"><a href="../About/" style="color: #fcfcfc">Next »</a></span>
+<span><a href=".." style="color: #fcfcfc;">« Previous</a></span>
+<span style="margin-left: 15px"><a href="../account/" style="color: #fcfcfc">Next »</a></span>
 </span>
 </div>
 <script>var base_url = '..';</script>

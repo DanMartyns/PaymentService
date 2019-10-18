@@ -21,7 +21,7 @@ services:
     network_mode : "host"
   gunicorn:
     build: .
-    command: gunicorn PaymentService:app -b :5000
+    command: gunicorn server.PaymentService:app -b :5000
     restart: always    
     environment:
       PYTHONUNBUFFERED: 'true'

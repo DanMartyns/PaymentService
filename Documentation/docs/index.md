@@ -14,11 +14,11 @@ In the Thoughts and Decisions TAB has some publications to justify why was made 
     mkdocs.yml              # The configuration file.
     docs/
         index.md            # The documentation homepage.
-        Account.md          # The description about the account methods
-        Payment.md          # The description about the payment methods
+        account.md          # The description about the account methods
+        payment.md          # The description about the payment methods
         apiOperations.md    # Some considerations about the API
-        About.md            # Some points about the author of the Service
-        Gunicorn            # The file descriving why using gunicorn
+        about.md            # Some points about the author of the Service
+        gunicorn.md         # The file descriving why using gunicorn
         img/                # A folder with the images used in the documentation
 
 ## How to initiate?
@@ -43,18 +43,18 @@ In the file PaymentService.py, you can change the exposed port for the database
 ```
 ### Docker
 
-You must install docker and docker-compose
+You must install **docker** and **docker-compose**
 
 Into the folder "Project" run the command :
 ```bash  
-docker-compose up
+    docker-compose up
 ```
 
 If you want run the containers in the background, change the command to:
 ```bash  
-docker-compose up -d
+    docker-compose up -d
 ```
 To stop the containers, inside the Project folder, run the command:
 ```bash  
-docker-compose stop
+    docker-compose stop
 ```

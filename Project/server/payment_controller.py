@@ -1,6 +1,7 @@
 from flask import request, Blueprint
+from server import db
 from server.auxiliar_functions import Auxiliar, Message
-from server.models import db, Account, Payment, Transaction
+from server.models import Account, Payment, Transaction
 from server.user_controller import login_required
 from http import HTTPStatus
 from iso4217 import Currency
@@ -8,6 +9,7 @@ import uuid
 
 # CONFIG
 payment_controller = Blueprint('payment', __name__)
+
 
 @payment_controller.route('/payments', methods=['POST'])
 @login_required
@@ -48,10 +50,10 @@ def create_payment(account):
                 code = HTTPStatus.BAD_REQUEST
                 raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
 
-        except Exception as excep:
+        except Exception as exc:
             response = {
                 'status': 'fail',
-                'message': str(excep)
+                'message': str(exc)
             }                    
         # Save the state of the payment
         # Everytime that we create a payment, his state is "pending"
@@ -123,6 +125,7 @@ def create_transaction(account, payment_id):
     """
         Add transaction to payment by ID
 
+        :param account:
         :param payment_id: Id of the payment to be associated
         :type payment_id: int
 
@@ -132,12 +135,9 @@ def create_transaction(account, payment_id):
     code = HTTPStatus.CREATED
     msg = Message()
 
-    if account :
+    if account:
         
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated :          
+        if account.state:
             try:
                 amount = request.json.get('amount')
                 reference = request.json.get('reference')
@@ -163,12 +163,8 @@ def create_transaction(account, payment_id):
                 return msg.message(code, str(excep))
 
             # Create a transaction
-            transaction = Transaction(amount, payment_id, reference )
-            db.session.add(transaction)
-
+            transaction = Transaction(amount, payment_id, reference)
             payment.amount += amount
-
-            db.session.commit()
 
             response = {
                 'status': 'success',
@@ -207,12 +203,8 @@ def cancel_transaction(account,payment_id, transaction):
     code = HTTPStatus.OK
     msg = Message()
     
-    if account :
-        
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated :     
+    if account:
+        if account.state:
             try:
 
                 payment = Payment.query.get(payment_id)
@@ -233,10 +225,10 @@ def cancel_transaction(account,payment_id, transaction):
                     code = HTTPStatus.CONFLICT
                     raise Exception("The transaction is already completed, you cannot cancel")
 
-            except Exception as excep:
+            except Exception as exc:
                 response = {
                     'status': 'fail',
-                    'message': str(excep)
+                    'message': str(exc)
                 }
 
             # Calculate the amount that will no longer be included in the final payment
@@ -247,13 +239,11 @@ def cancel_transaction(account,payment_id, transaction):
             # The transaction was cancelled
             transaction.state = "cancelled"
 
-            db.session.commit()
-
             response = {
                 'status': 'success',
                 'message' : 'The transaction '+transaction.id+' was cancelled'
             }
-        else :
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
@@ -285,10 +275,7 @@ def execute(account,id):
     msg = Message()
     if account :
         
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated :   
+        if account.state:
             try:
 
                 payment = Payment.query.get(id)
@@ -302,10 +289,10 @@ def execute(account,id):
                     code = HTTPStatus.CONFLICT
                     raise Exception("The payment is already completed")
 
-            except Exception as excep:
+            except Exception as exc:
                 response = {
                     'status': 'fail',
-                    'message': str(excep)
+                    'message': str(exc)
                 }
 
             transactions = Transaction.query.filter_by(id_payment=id, state="created")
@@ -313,7 +300,6 @@ def execute(account,id):
             total = 0.0
             for t in transactions:
                 t.state = "completed"
-                db.session.commit()
                 total += t.amount
 
             try:
@@ -328,10 +314,10 @@ def execute(account,id):
                     code = HTTPStatus.NOT_ACCEPTABLE
                     raise Exception("The total of the transactions needs to be equals to the payment amount")
 
-            except Exception as excep:
+            except Exception as exc:
                 response = {
                     'status': 'fail',
-                    'message': str(excep)
+                    'message': str(exc)
                 }
 
             seller = Account.query.get(payment.receiver_id)
@@ -339,7 +325,6 @@ def execute(account,id):
 
             account.balance -= total
             payment.state = "completed"
-            db.session.commit()
 
             response = {
                 'status': 'success',
@@ -379,11 +364,8 @@ def authorization_payment(account,id):
     msg = Message()
     
     if account :
-        
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated :   
+
+        if account.state:
             try:
                 payment = Payment.query.get(id)
 
@@ -396,10 +378,10 @@ def authorization_payment(account,id):
                     code = HTTPStatus.CONFLICT
                     raise Exception('The payment is already completed')
 
-            except Exception as excep:
+            except Exception as exc:
                 response = {
                     'status': 'fail',
-                    'message': str(excep)
+                    'message': str(exc)
                 }
 
             # Let's pretend there is an authorization, and you need to call an "authorization" function, but nothing happens internally.
@@ -441,10 +423,7 @@ def get_transactions(account, id):
     msg = Message()
     if account:
         
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated : 
+        if account.state:
             try:
                 payment = Payment.query.get(id)
 
@@ -513,10 +492,7 @@ def get_transaction(account, id, transaction):
     
     if account:
         
-        # Flag to check if the account is activated
-        activated = db.Query(Account).filter_by(state = True)        
-        
-        if activated :  
+        if account.state:
             try:
                 payment = Payment.query.get(id)
 

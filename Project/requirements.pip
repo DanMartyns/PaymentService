@@ -11,7 +11,7 @@ idna==2.8
 iso4217==1.6.20180829
 itsdangerous==1.1.0
 Jinja2==2.10.3
-jwt==0.6.1
+pyjwt==1.7.1
 MarkupSafe==1.1.1
 psycopg2-binary==2.8.3
 pycparser==2.19

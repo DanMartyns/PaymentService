@@ -1,17 +1,13 @@
 # Project/models.py
 
+import os
 import uuid
 import enum
 import jwt
-import os
 import datetime
 from iso4217 import Currency
 from sqlalchemy.dialects.postgresql import UUID
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-
-db = SQLAlchemy()
-bcrypt = Bcrypt()
+from server import db, bcrypt
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'my_precious')
 BCRYPT_LOG_ROUNDS = 13
@@ -30,8 +26,8 @@ class TransactionState(enum.Enum):
     failed = "failed"
     cancelled = "cancelled"
 
-# MODELS
 
+# MODELS
 class BaseModel(db.Model):
     """
         Base data model for all objects
@@ -53,10 +49,9 @@ class BaseModel(db.Model):
             Define a base way to jsonify models, dealing with datetime objects
         """
         return {
-            column: value if not isinstance(
-                value, datetime.date) else value.strftime('%Y-%m-%d')
-            for column, value in self._to_dict().items()
+            column: value if not isinstance(value, datetime.date) else value.strftime('%Y-%m-%d') for column, value in self._to_dict().items()
         }
+
 
 class Active_Sessions(BaseModel, db.Model):
     """
@@ -78,11 +73,12 @@ class Active_Sessions(BaseModel, db.Model):
     @staticmethod
     def check_active_session(auth_token):
         # check whether auth token has been blacklisted
-        res = Active_Sessions.query.filter_by(token=str(auth_token)).first()
+        res = Active_Sessions.query.filter_by(token=auth_token).first()
         if res:
             return True
         else:
             return False
+
 
 class Account(BaseModel, db.Model):
     """
@@ -93,7 +89,9 @@ class Account(BaseModel, db.Model):
     # The account id
     id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The user id 									
-    user_id = db.Column(UUID(as_uuid=True),unique=True, nullable=False) 								
+    user_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False)
+    # The password
+    password = db.Column(db.String(255), nullable=False)
     # The ammount in his account
     balance = db.Column(db.Float, default=0.0, nullable=False)
     # The atual currency
@@ -113,7 +111,11 @@ class Account(BaseModel, db.Model):
         self.state = True
         self.created_at = self.updated_at = datetime.datetime.utcnow().isoformat()
 
-    def encode_auth_token(self):
+    def __repr__(self):
+        return '<user_id = '+self.user_id+', password = '+self.password+'>'
+
+    @staticmethod
+    def encode_auth_token(user_id):
         """
             Generates the Auth Token
             :return: string
@@ -122,13 +124,9 @@ class Account(BaseModel, db.Model):
             payload = {
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
                 'iat': datetime.datetime.utcnow(),
-                'sub': str(self.id)
+                'sub': str(user_id)
             }
-            return jwt.encode(
-                payload,
-                SECRET_KEY,
-                algorithm='HS256'
-            )
+            return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
         except Exception as e:
             return e
     
@@ -150,6 +148,12 @@ class Account(BaseModel, db.Model):
             return 'Signature expired. Please log in again.'
         except jwt.InvalidTokenError:
             return 'Invalid token. Please log in again.'
+
+    def check_password_hash(hash, password):
+        return bcrypt.check_password_hash(hash, password)
+
+
+
 
 class Payment(BaseModel, db.Model):
     """
@@ -192,6 +196,7 @@ class Payment(BaseModel, db.Model):
         self.currency = currency
         self.reference = reference
 
+
 class Transaction(BaseModel, db.Model):
     """
         Model for the transactions table
@@ -222,3 +227,4 @@ class Transaction(BaseModel, db.Model):
         self.update_date = datetime.datetime.now()
         self.id_payment = id_payment
         self.reference = reference
+

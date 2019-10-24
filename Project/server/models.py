@@ -7,10 +7,7 @@ import jwt
 import datetime
 from iso4217 import Currency
 from sqlalchemy.dialects.postgresql import UUID
-from server import db, bcrypt
-
-SECRET_KEY = os.getenv('SECRET_KEY', 'my_precious')
-BCRYPT_LOG_ROUNDS = 13
+from server import db, bcrypt, app
 
 
 class PaymentState(enum.Enum):
@@ -105,7 +102,7 @@ class Account(BaseModel, db.Model):
 
     def __init__(self, user_id, password, currency):
         self.user_id = user_id
-        self.password = bcrypt.generate_password_hash(password, BCRYPT_LOG_ROUNDS).decode()
+        self.password = bcrypt.generate_password_hash(password, app.config['BCRYPT_LOG_ROUNDS']).decode()
         self.balance = 0.0
         self.currency = currency
         self.state = True
@@ -126,7 +123,7 @@ class Account(BaseModel, db.Model):
                 'iat': datetime.datetime.utcnow(),
                 'sub': str(user_id)
             }
-            return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+            return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
         except Exception as e:
             return e
     
@@ -138,7 +135,7 @@ class Account(BaseModel, db.Model):
             :return: integer|string
         """
         try:
-            payload = jwt.decode(auth_token, SECRET_KEY)
+            payload = jwt.decode(auth_token, app.config['SECRET_KEY'])
             is_active_token = Active_Sessions.check_active_session(auth_token)
             if not is_active_token:
                 return 'Token invalid.'
@@ -151,8 +148,6 @@ class Account(BaseModel, db.Model):
 
     def check_password_hash(hash, password):
         return bcrypt.check_password_hash(hash, password)
-
-
 
 
 class Payment(BaseModel, db.Model):

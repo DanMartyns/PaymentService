@@ -55,14 +55,14 @@ def login():
     # Get parameters
     user_id = uuid.UUID(uuid.UUID(request.json.get('user_id')).hex)
     password = request.json.get('password')
-    print(password)
+
     try:
         # fetch the user data
         user = Account.query.filter_by(user_id=user_id).first()
-        print(user.__dict__)
 
         if user and Account.check_password_hash(user.password, password):
             auth_token = Account.encode_auth_token(user.id)
+            print("Auth token : ", auth_token)
 
             # mark the token into Active_Sessions
             active_session = Active_Sessions(token=auth_token)

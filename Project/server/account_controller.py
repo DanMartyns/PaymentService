@@ -2,7 +2,7 @@ from flask import request, Blueprint
 from server import db
 from server.auxiliar_functions import Auxiliar, Message
 from server.user_controller import login_required
-from server.models import Account
+from server.models import Account, Active_Sessions
 from http import HTTPStatus
 from iso4217 import Currency
 import uuid
@@ -77,7 +77,7 @@ def create_account():
 
 @account_controller.route('/account/amount', methods=['POST'])
 @login_required
-def add_amount(account):
+def add_amount():
     """
         Add an amount to an account
 
@@ -87,6 +87,7 @@ def add_amount(account):
     code = HTTPStatus.OK
     msg = Message()
 
+    session = Active_Sessions.query.get()
     if account:
         
         if account.state:

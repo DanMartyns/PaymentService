@@ -28,6 +28,7 @@ class TestAuth(unittest.TestCase):
     def test_registration(self):
         """ Test for user registration """
 
+        print(" --------------------------- Test 1 - Registration ----------------------------")
         user_id = uuid.uuid4()
         password = "my-precious"
         currency = "EUR"
@@ -41,6 +42,8 @@ class TestAuth(unittest.TestCase):
 
     def test_registered_with_already_registered_user(self):
         """ Test registration with already registered email"""
+
+        print(" ------------ Test 2 - Registration an user already registed ------------------")
 
         user_id = uuid.uuid4()
         account = Account(user_id=user_id, password="my-precious", currency=Currency("EUR"))
@@ -57,6 +60,8 @@ class TestAuth(unittest.TestCase):
     def test_login(self):
         """ Test the login """
 
+        print(" --------------------------- Test 3 - Login ----------------------------")
+
         user_id = uuid.uuid4()
         password = "my-precious"
         currency = "EUR"
@@ -70,6 +75,8 @@ class TestAuth(unittest.TestCase):
 
     def test_access_methods_without_token(self):
         """ Test access to methods without token """
+
+        print(" --------------------------- Test 4 - Try Access without token ----------------------------")
 
         user_id = uuid.uuid4()
         password = "my-precious"
@@ -85,19 +92,51 @@ class TestAuth(unittest.TestCase):
     def test_access_methods_with_token(self):
         """ Test access to methods with token """
 
+        print(" --------------------------- Test 5 - Try Access with token ----------------------------")
+
         user_id = uuid.uuid4()
         password = "my-precious"
         currency = "EUR"
 
         register_user(user_id, password, currency)
         response = login_user(user_id, password)
-        print(response.text)
+
+        self.assertTrue(response.json()['message']['auth_token'])
+
         auth_token = response.json()['message']['auth_token']
-        print('Auth Token :', auth_token)
         headers = {'Content-Type': "application/json", 'Authorization': auth_token}
         data = "{\"amount\" : 20.0}"
-        response = requests.post('http://localhost:5000/amount', headers=headers, data=data)
-        print(response.text)
+        response = requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+
+        self.assertTrue(response.json()['message']['status'] == 'success')
+        self.assertTrue(response.json()['message']['message'] == 'The amount was added.')
+        self.assertEqual(response.json()['code'], 200)
+
+    def test_access_account_info_with_token(self):
+        """ Test access to info account with token """
+
+        print(" --------------------------- Test 6 - Access Account Information ----------------------------")
+
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        register_user(user_id, password, currency)
+        response = login_user(user_id, password)
+
+        self.assertTrue(response.json()['message']['auth_token'])
+
+        auth_token = response.json()['message']['auth_token']
+        headers = {'Content-Type': "application/json", 'Authorization': auth_token}
+
+        data = "{\"amount\" : 20.0}"
+        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+
+        # Get the buyer account information to check if the money comes in
+        response = requests.get('http://0.0.0.0:5000/account', headers=headers)
+        print(json.dumps(response.json()['message'], indent=4))
 
 
 if __name__ == '__main__':

@@ -61,7 +61,7 @@ class Active_Sessions(BaseModel, db.Model):
     emission_at = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, token):
-        self.token = token
+        self.token = str(token)
         self.emission_at = datetime.datetime.now()
 
     def __repr__(self):
@@ -69,12 +69,16 @@ class Active_Sessions(BaseModel, db.Model):
 
     @staticmethod
     def check_active_session(auth_token):
-        # check whether auth token has been blacklisted
-        res = Active_Sessions.query.filter_by(token=auth_token).first()
+        # check whether auth token has been listed
+        res = Active_Sessions.query.filter_by(token=str(auth_token)).first()
         if res:
             return True
         else:
             return False
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
 
 
 class Account(BaseModel, db.Model):
@@ -84,7 +88,7 @@ class Account(BaseModel, db.Model):
     __tablename__ = 'account'
 
     # The account id
-    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The user id 									
     user_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False)
     # The password
@@ -111,6 +115,14 @@ class Account(BaseModel, db.Model):
     def __repr__(self):
         return '<user_id = '+self.user_id+', password = '+self.password+'>'
 
+    @classmethod
+    def find_by_id(cls, user_id):
+        return cls.query.filter_by(user_id=user_id).first()
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
     @staticmethod
     def encode_auth_token(user_id):
         """
@@ -119,7 +131,7 @@ class Account(BaseModel, db.Model):
         """
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=600),
                 'iat': datetime.datetime.utcnow(),
                 'sub': str(user_id)
             }
@@ -140,6 +152,7 @@ class Account(BaseModel, db.Model):
             if not is_active_token:
                 return 'Token invalid.'
             else:
+                print(payload['sub'])
                 return uuid.UUID(uuid.UUID(payload['sub']).hex) 
         except jwt.ExpiredSignatureError:
             return 'Signature expired. Please log in again.'
@@ -148,6 +161,10 @@ class Account(BaseModel, db.Model):
 
     def check_password_hash(hash, password):
         return bcrypt.check_password_hash(hash, password)
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
 
 
 class Payment(BaseModel, db.Model):
@@ -191,6 +208,10 @@ class Payment(BaseModel, db.Model):
         self.currency = currency
         self.reference = reference
 
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
 
 class Transaction(BaseModel, db.Model):
     """
@@ -223,3 +244,6 @@ class Transaction(BaseModel, db.Model):
         self.id_payment = id_payment
         self.reference = reference
 
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()

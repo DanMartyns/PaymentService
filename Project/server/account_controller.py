@@ -41,8 +41,7 @@ def create_account():
 
             # Save the account
             ac = Account(user_id=user_id, password=password, currency=Currency(currency))
-            db.session.add(ac)
-            db.session.commit()
+            ac.save_to_db()
 
             response = {
                 'status': 'success',
@@ -77,7 +76,7 @@ def create_account():
 
 @account_controller.route('/account/amount', methods=['POST'])
 @login_required
-def add_amount():
+def add_amount(account_id):
     """
         Add an amount to an account
 
@@ -87,19 +86,20 @@ def add_amount():
     code = HTTPStatus.OK
     msg = Message()
 
-    session = Active_Sessions.query.get()
+    account = Account.query.filter_by(id=account_id).first()
+
     if account:
-        
+
         if account.state:
             try:
                 # Get parameters
                 amount = request.json.get('amount')
 
-                # Validate the parameters          
+                # Validate the parameters
                 if not isinstance(float(amount), float):
                     code = HTTPStatus.BAD_REQUEST
                     raise Exception("Your amount is wrong. The amount is not valid")
-                
+
                 elif float(amount) < 0.0:
                     code = HTTPStatus.BAD_REQUEST
                     raise Exception("Your amount is wrong. The amount needs to be more than 0.0")
@@ -123,8 +123,8 @@ def add_amount():
             response = {
                 'status': 'fail',
                 'message': 'Your number account is desactivated.'
-            }  
-        return msg.message(code,response)
+            }
+        return msg.message(code, response)
     else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
@@ -137,7 +137,7 @@ def add_amount():
 
 @account_controller.route('/account/activate', methods=['POST'])
 @login_required
-def activate_account(account):
+def activate_account(account_id):
     """
         Activate the user account
 
@@ -146,6 +146,8 @@ def activate_account(account):
 
     code = HTTPStatus.OK
     msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
 
     if account:
 
@@ -173,7 +175,7 @@ def activate_account(account):
 
 @account_controller.route('/account/desactivate', methods=['POST'])
 @login_required
-def desativate_account(account):
+def desativate_account(account_id):
     """
         Desactivate the user account
 
@@ -182,6 +184,8 @@ def desativate_account(account):
 
     code = HTTPStatus.OK
     msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
 
     if account:
         if not account.state:
@@ -210,7 +214,7 @@ def desativate_account(account):
 # Get account information
 @account_controller.route('/account', methods=['GET'])
 @login_required
-def account_info(account):
+def account_info(account_id):
     """
         Get the account information
 
@@ -219,6 +223,8 @@ def account_info(account):
 
     code = HTTPStatus.OK
     msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
 
     if account:
         response = {

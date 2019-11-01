@@ -6,36 +6,34 @@ from functools import wraps
 from http import HTTPStatus
 from flask import abort
 import uuid
+import json
+import array
 
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kws):
-        msg = Message()
-        auth_header = request.headers.get('Authorization')
-        if 'logged_in' in session:
-            if auth_header:
-                try:
-                    auth_token = auth_header.split(" ")[1]
-                    print(auth_token)
-                except IndexError:
-                    abort(400, {'status': 'fail', 'message': 'Bad format message'})
-            else:
-                auth_token = ''
 
-            if auth_token:
-                try:
-                    resp = Account.decode_auth_token(auth_token)
-                    data = request.headers['Authorization'].encode('ascii', 'ignore')
-                    token = str.replace(str(data), 'Bearer ', '')
-                    token = Account.encode_auth_token(token)
-                except:
-                    abort(401)
-                return f(token, *args, **kws)
-            else:
-                abort(401)
+        if 'Authorization' not in request.headers:
+            abort(401)
+            # It is important only abort the operation.
+            # If there is a specific error message, the user will
+            # know that the operation you are trying to access exists.
+
+        auth_token = request.headers.get('Authorization')
+
+        if auth_token:
+            try:
+                # For this project we will ignore the correct implementation of security
+                user_id = Account.decode_auth_token(auth_token.encode())
+                # data = request.headers['Authorization'].encode('ascii', 'ignore')
+                # token = str.replace(str(data), 'Bearer ', '')
+                # token = Account.encode_auth_token(token)
+            except:
+                abort(401, {'status': 'fail', 'message': user_id})
+            return f(user_id, *args, **kws)
         else:
-            abort(401, {'status': 'fail', 'message': 'Login first'})
+            abort(401)
 
     return decorated_function
 
@@ -58,30 +56,36 @@ def login():
 
     try:
         # fetch the user data
-        user = Account.query.filter_by(user_id=user_id).first()
+        current_user = Account.find_by_id(user_id)
 
-        if user and Account.check_password_hash(user.password, password):
-            auth_token = Account.encode_auth_token(user.id)
-            print("Auth token : ", auth_token)
+        if not current_user:
+            code = HTTPStatus.NOT_FOUND
+            response = {
+                'status': 'fail',
+                'message': 'User {} doesn\'t exist'.format(user_id)
+            }
+
+        if Account.check_password_hash(current_user.password, password):
+
+            auth_token = Account.encode_auth_token(current_user.id)
 
             # mark the token into Active_Sessions
             active_session = Active_Sessions(token=auth_token)
-            db.session.add(active_session)
-            db.session.commit()
+            active_session.save_to_db()
 
             if auth_token:
-                session['logged_in'] = True
                 response = {
                     'status': 'success',
                     'message': 'Successfully logged in.',
                     'auth_token': auth_token.decode()
                 }
+
                 return msg.message(code, response)
         else:
-            code = HTTPStatus.NOT_FOUND
+            code = HTTPStatus.BAD_REQUEST
             response = {
                 'status': 'fail',
-                'message': 'User does not exist.'
+                'message': 'Wrong Credentials'
             }
             return msg.message(code, response)
     except Exception as e:
@@ -112,7 +116,7 @@ def logout():
         resp = Account.decode_auth_token(auth_token)
         if not isinstance(resp, str):
             Active_Sessions.query.filter(Active_Sessions.token == auth_token).delete()
-            session.pop('logged_in', None)
+
             response = {
                 'status': 'success',
                 'message': 'Successfully logged out.'

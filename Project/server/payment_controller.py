@@ -13,7 +13,7 @@ payment_controller = Blueprint('payment', __name__)
 
 @payment_controller.route('/payments', methods=['POST'])
 @login_required
-def create_payment(account):
+def create_payment(account_id):
     """
         Make a payment
 
@@ -24,7 +24,9 @@ def create_payment(account):
     aux = Auxiliar()
     msg = Message()
 
-    if account :
+    account = Account.query.filter_by(id=account_id).first()
+
+    if account:
         try:
             # Get parameters
             request_id = request.json.get('request_id')
@@ -48,18 +50,19 @@ def create_payment(account):
             # Check if the currency is valid
             if not isinstance(Currency(currency), Currency):
                 code = HTTPStatus.BAD_REQUEST
-                raise Exception("Your currency is wrong. Uses the international standard that defines three-letter codes as currencies established by the International Organization. (ISO 4217)")
+                raise Exception("Your currency is wrong. Uses the international standard that defines three-letter "
+                                "codes as currencies established by the International Organization. (ISO 4217)")
 
         except Exception as exc:
             response = {
                 'status': 'fail',
                 'message': str(exc)
             }                    
-        # Save the state of the payment
+
+        # Save the new payment
         # Everytime that we create a payment, his state is "pending"
-        payment = Payment(request_id, id, seller_id, Currency(currency), reference)
-        db.session.add(payment)
-        db.session.commit()
+        payment = Payment(request_id, account.id, seller_id, Currency(currency), reference)
+        payment.save_to_db()
 
         response = {
             'status': 'success',
@@ -77,7 +80,7 @@ def create_payment(account):
 # Get payment
 @payment_controller.route('/payments', methods=['GET'])
 @login_required
-def get_payments(account):
+def get_payments(account_id):
     """
         Get the payments from an User
 
@@ -87,7 +90,9 @@ def get_payments(account):
     code = HTTPStatus.OK
     msg = Message()
 
-    if account : 
+    account = Account.query.filter_by(id=account_id).first()
+
+    if account:
         payments = Payment.query.filter_by(account_id=account.id)
 
         data = []
@@ -121,19 +126,22 @@ def get_payments(account):
 # Create and request transaction
 @payment_controller.route('/payments/<uuid:payment_id>/transactions', methods=['POST'])
 @login_required 
-def create_transaction(account, payment_id):
+def create_transaction(account_id, payment_id):
     """
         Add transaction to payment by ID
 
-        :param account:
+        :param account_id: Account id
+        :type account_id: uuid
         :param payment_id: Id of the payment to be associated
-        :type payment_id: int
+        :type payment_id: uuid
 
         :rtype: dict | bytes (Transaction details)
     """
 
     code = HTTPStatus.CREATED
     msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
 
     if account:
         
@@ -154,16 +162,13 @@ def create_transaction(account, payment_id):
                     code = HTTPStatus.NOT_FOUND
                     raise Exception("Payment not found")
 
-                # Check if he is enough money to pay
-                if amount > account.balance:
-                    code = HTTPStatus.BAD_REQUEST
-                    raise Exception("Your Account does not have enough available amount")
-
             except Exception as excep:
                 return msg.message(code, str(excep))
 
             # Create a transaction
             transaction = Transaction(amount, payment_id, reference)
+            transaction.save_to_db()
+
             payment.amount += amount
 
             response = {
@@ -188,21 +193,25 @@ def create_transaction(account, payment_id):
 # Cancel a transaction
 @payment_controller.route('/payments/<uuid:payment_id>/transactions/<uuid:transaction>/cancel', methods=['POST'])
 @login_required
-def cancel_transaction(account,payment_id, transaction):
+def cancel_transaction(account_id, payment_id, transaction):
     """
         Cancel transaction from payment by the ID of the transaction
 
+        :param account_id: Account id
+        :type account_id: uuid
         :param payment_id: Id of the payment
-        :type payment_id: int
+        :type payment_id: uuid
         :param transaction: Id of the transaction
-        :type transaction: int
+        :type transaction: uuid
 
         :rtype: dict | bytes
     """
 
     code = HTTPStatus.OK
     msg = Message()
-    
+
+    account = Account.query.filter_by(id=account_id).first()
+
     if account:
         if account.state:
             try:
@@ -225,24 +234,24 @@ def cancel_transaction(account,payment_id, transaction):
                     code = HTTPStatus.CONFLICT
                     raise Exception("The transaction is already completed, you cannot cancel")
 
+                # Calculate the amount that will no longer be included in the final payment
+                diff = payment.amount - transaction.amount
+
+                payment.amount -= diff
+
+                # The transaction was cancelled
+                transaction.state = "cancelled"
+
+                response = {
+                    'status': 'success',
+                    'message': 'The transaction '+str(transaction.id)+' was cancelled'
+                }
+
             except Exception as exc:
                 response = {
                     'status': 'fail',
                     'message': str(exc)
                 }
-
-            # Calculate the amount that will no longer be included in the final payment
-            diff = payment.amount - transaction.amount
-
-            payment.amount -= diff
-
-            # The transaction was cancelled
-            transaction.state = "cancelled"
-
-            response = {
-                'status': 'success',
-                'message' : 'The transaction '+transaction.id+' was cancelled'
-            }
         else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
@@ -259,26 +268,31 @@ def cancel_transaction(account,payment_id, transaction):
     return msg.message(code, response)
 
 # Execute the payment
-@payment_controller.route('/payments/<uuid:id>/execute', methods=['POST'])
+@payment_controller.route('/payments/<uuid:payment_id>/execute', methods=['POST'])
 @login_required
-def execute(account,id):
+def execute(account_id, payment_id):
     """
         Execute payment by ID
 
-        :param id: Id of the payment to be executed
-        :type id: int
+        :param account_id: Account id
+        :type account_id: uuid
+        :param payment_id: Id of the payment to be executed
+        :type payment_id: uuid
 
         :rtype: dict | bytes
     """
 
     code = HTTPStatus.CREATED
     msg = Message()
-    if account :
+
+    account = Account.query.filter_by(id=account_id).first()
+
+    if account:
         
         if account.state:
             try:
 
-                payment = Payment.query.get(id)
+                payment = Payment.query.get(payment_id)
 
                 # Check if payments exists
                 if not payment:
@@ -295,7 +309,7 @@ def execute(account,id):
                     'message': str(exc)
                 }
 
-            transactions = Transaction.query.filter_by(id_payment=id, state="created")
+            transactions = Transaction.query.filter_by(id_payment=payment_id, state="created")
 
             total = 0.0
             for t in transactions:
@@ -306,32 +320,31 @@ def execute(account,id):
 
                 # Check if he is enough money to pay
                 if total > account.balance:
-                    code = HTTPStatus.BAD_REQUEST
+                    code = HTTPStatus.NOT_ACCEPTABLE
                     raise Exception("The account does not have enough available amount")
 
                 # Check if the total of the transactions pays the amount of the payment
-                if total != payment.amount :
+                if total != payment.amount:
                     code = HTTPStatus.NOT_ACCEPTABLE
                     raise Exception("The total of the transactions needs to be equals to the payment amount")
+
+                seller = Account.query.get(payment.receiver_id)
+                seller.balance += total
+
+                account.balance -= total
+                payment.state = "completed"
+
+                response = {
+                    'status': 'success',
+                    'message': 'The payment was executed'
+                }
 
             except Exception as exc:
                 response = {
                     'status': 'fail',
                     'message': str(exc)
                 }
-
-            seller = Account.query.get(payment.receiver_id)
-            seller.balance += total
-
-            account.balance -= total
-            payment.state = "completed"
-
-            response = {
-                'status': 'success',
-                'message' : 'The payment was executed'
-            }
-
-        else :
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
@@ -348,12 +361,14 @@ def execute(account,id):
 
 
 # Authorize the payment
-@payment_controller.route('/payments/<uuid:id>/authorize', methods=['POST'])
+@payment_controller.route('/payments/<uuid:payment_id>/authorize', methods=['POST'])
 @login_required
-def authorization_payment(account,id):
+def authorization_payment(account_id, payment_id):
     """
         Authorization the payment
 
+        :param account_id: Account id
+        :type : uuid
         :param payment_id: Id of the payment
         :type payment_id: int
 
@@ -362,12 +377,14 @@ def authorization_payment(account,id):
 
     code = HTTPStatus.OK
     msg = Message()
-    
-    if account :
+
+    account = Account.query.filter_by(id=account_id).first()
+
+    if account:
 
         if account.state:
             try:
-                payment = Payment.query.get(id)
+                payment = Payment.query.get(payment_id)
 
                 # Check if payments exists
                 if not payment:
@@ -384,11 +401,12 @@ def authorization_payment(account,id):
                     'message': str(exc)
                 }
 
-            # Let's pretend there is an authorization, and you need to call an "authorization" function, but nothing happens internally.
+            # Let's pretend there is an authorization, and you need to call an "authorization" function, but nothing
+            # happens internally.
 
             response = {
                 'status': 'success',
-                'message' : 'The payment was authorized'
+                'message': 'The payment was authorized'
             }
 
         else :
@@ -407,25 +425,30 @@ def authorization_payment(account,id):
     return msg.message(code, response)
 
 # Get all the transactions
-@payment_controller.route('/payments/<uuid:id>/transactions', methods=['GET'])
+@payment_controller.route('/payments/<uuid:payment_id>/transactions', methods=['GET'])
 @login_required
-def get_transactions(account, id):
+def get_transactions(account_id, payment_id):
     """
         Find transactions from payment by ID
 
-        :param id: Id of the payment associated
-        :type id: int
+        :param account_id: Account_id
+        :type account_id: uuid
+        :param payment_id: Id of the payment associated
+        :type payment_id: uuid
 
         :rtype: dict | bytes (with Transactions)
     """
 
     code = HTTPStatus.OK
     msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
+
     if account:
         
         if account.state:
             try:
-                payment = Payment.query.get(id)
+                payment = Payment.query.get(payment_id)
 
                 # Check if payments exists
                 if not payment:
@@ -438,7 +461,7 @@ def get_transactions(account, id):
                     'message': str(excep)
                 }
 
-            transactions = Transaction.query.filter_by(id_payment=id)
+            transactions = Transaction.query.filter_by(id_payment=payment_id)
 
             data = []
             for transaction in transactions:
@@ -473,28 +496,32 @@ def get_transactions(account, id):
     return msg.message(code, response)
 
 # Get a specific transaction
-@payment_controller.route('/payments/<uuid:id>/transactions/<uuid:transaction>', methods=['GET'])
+@payment_controller.route('/payments/<uuid:payment_id>/transactions/<uuid:transaction>', methods=['GET'])
 @login_required
-def get_transaction(account, id, transaction):
+def get_transaction(account_id, payment_id, transaction):
     """
         Find transactions from payment by ID
 
-        :param id: Id of the payment associated
-        :type id: int
+        :param account_id: Account id
+        :type account_id: uuid
+        :param payment_id: Id of the payment associated
+        :type payment_id: uuid
         :param transaction: A specific transaction of a payment
-        :type transaction: int
+        :type transaction: uuid
 
         :rtype: dict | bytes (with the Transaction)
     """
 
     code = HTTPStatus.OK
     msg = Message()
-    
+
+    account = Account.query.filter_by(id=account_id).first()
+
     if account:
         
         if account.state:
             try:
-                payment = Payment.query.get(id)
+                payment = Payment.query.get(payment_id)
 
                 # Check if payments exists
                 if not payment:
@@ -531,4 +558,4 @@ def get_transaction(account, id, transaction):
             'status': 'fail',
             'message': 'Try Again.'
         }
-    return msg.message(code,response)
+    return msg.message(code, response)

@@ -11,7 +11,8 @@ export SSHPASS='qazedctgb00'
 echo -e "\n${bold}* Cópia do código a executar no servidor *${normal}"
 
 sshpass -e sftp -o StrictHostKeyChecking=no grupo1@192.168.85.208 << EOF
-	put -r . ES/
+	mkdir PaymentService
+	put -r . PaymentService/
 	bye
 EOF
 
@@ -20,8 +21,8 @@ EOF
 echo -e "\n${bold}* Execução do código no servidor *${normal}"
 
 sshpass -e ssh -t -t -o StrictHostKeyChecking=no grupo1@192.168.85.208 << EOF
-	cd ES/
+	cd PaymentService/
 	. venv/bin/activate
-	docker-compose up --build
+	docker-compose up -d --build
 	exit
 EOF

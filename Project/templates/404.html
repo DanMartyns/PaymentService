@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Payment Service">
+    <meta name="author" content="Daniel Martins">
+    <title>ERROR</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/pe-icons.css" rel="stylesheet">
+    <link href="css/prettyPhoto.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="js/jquery.js"></script>
+
+    <script type="text/javascript">
+        jQuery(document).ready(function($){
+        'use strict';
+              jQuery('body').backstretch([
+                "images/bg/bg2.jpg",
+                "images/bg/bg3.jpg"
+            ], {duration: 5000, fade: 500, centeredY: true });
+    
+            $("#mapwrapper").gMap({ controls: false,
+                 scrollwheel: false,
+                 markers: [{
+                      latitude:40.7566,
+                    longitude: -73.9863,
+                  icon: { image: "images/marker.png",
+                      iconsize: [44,44],
+                      iconanchor: [12,46],
+                      infowindowanchor: [12, 0] } }],
+                  icon: {
+                      image: "images/marker.png",
+                     iconsize: [26, 46],
+                      iconanchor: [12, 46],
+                      infowindowanchor: [12, 0] },
+                 latitude:40.7566,
+                 longitude: -73.9863,
+                  zoom: 14 });
+        });
+        </script>
+</head><!--/head-->
+<body>
+<div id="preloader"></div>
+    <header class="navbar navbar-inverse navbar-fixed-top " role="banner">
+            <div class="container">
+                <div class="navbar-header">
+                    <a class="navbar-brand"><h1><span class="pe-7s-gleam bounce-in"></span> Payment Service</h1></a>
+                </div>
+            </div>
+        </header><!--/header-->
+
+    <section id="main-slider" class="no-margin">
+        <div class="carousel slide" data-ride="carousel">
+            <div class="carousel-inner">
+                <div class="item active">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="carousel-content center centered">
+                                    <span class="home-icon pe-7s-gleam bounce-in"></span>
+                                    <h2 class="boxed animation animated-item-1 fade-down">UH OH, A 404 ERROR</h2>
+                                    <p class="boxed animation animated-item-2 fade-up">The Page you are looking for doesn't exist or an other error occurred. Head home to try again.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!--/.item-->
+            </div><!--/.carousel-inner-->
+        </div><!--/.carousel-->
+    </section><!--/#main-slider-->
+
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.prettyPhoto.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="js/init.js"></script>
+</body>
+</html>

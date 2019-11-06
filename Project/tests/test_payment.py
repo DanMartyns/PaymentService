@@ -62,6 +62,7 @@ class TestAuth(unittest.TestCase):
                                                                                  "\"reference\" : \""+reference+"\"} "
 
         response = requests.post('http://0.0.0.0:5000/payments', headers=headers, data=data)
+        print("Payment id "+response.json()['message']['id'])
 
         self.assertTrue(response.json()['message']['status'] == 'success')
         self.assertTrue(response.json()['message']['id'])

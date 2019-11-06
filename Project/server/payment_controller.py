@@ -1,4 +1,4 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, render_template
 from server import db
 from server.auxiliar_functions import Auxiliar, Message
 from server.models import Account, Payment, Transaction
@@ -362,7 +362,6 @@ def execute(account_id, payment_id):
 
 # Authorize the payment
 @payment_controller.route('/payments/<uuid:payment_id>/authorize', methods=['POST'])
-@login_required
 def authorization_payment(account_id, payment_id):
     """
         Authorization the payment
@@ -422,7 +421,8 @@ def authorization_payment(account_id, payment_id):
             'message': 'Try Again.'
         }
 
-    return msg.message(code, response)
+    #return msg.message(code, response)
+    return render_template("templates/index.html")
 
 # Get all the transactions
 @payment_controller.route('/payments/<uuid:payment_id>/transactions', methods=['GET'])

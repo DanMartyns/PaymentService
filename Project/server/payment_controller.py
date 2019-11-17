@@ -1,17 +1,29 @@
 from flask import request, Blueprint, render_template
-from server import db
 from server.auxiliar_functions import Auxiliar, Message
-from server.models import Account, Payment, Transaction
+from server.models import Account, Payment, Transaction, PaymentState, TransactionState
 from server.user_controller import login_required
+from flask_cors import cross_origin
 from http import HTTPStatus
 from iso4217 import Currency
+import datetime
 import uuid
 
+
 # CONFIG
-payment_controller = Blueprint('payment', __name__)
+payment_controller = Blueprint('payment', __name__, template_folder='server/templates', static_folder='server/static')
 
 
-@payment_controller.route('/payments', methods=['POST'])
+@payment_controller.route('/payments/connection', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def test_connection():
+    msg = Message()
+    response = {
+        'status': 'success'
+    }
+    return msg.message(HTTPStatus.OK, response)
+
+
+@payment_controller.route('/payments/', methods=['POST'])
 @login_required
 def create_payment(account_id):
     """
@@ -78,7 +90,7 @@ def create_payment(account_id):
     return msg.message(code, response)
 
 # Get payment
-@payment_controller.route('/payments', methods=['GET'])
+@payment_controller.route('/payments/', methods=['GET'])
 @login_required
 def get_payments(account_id):
     """
@@ -96,12 +108,12 @@ def get_payments(account_id):
         payments = Payment.query.filter_by(account_id=account.id)
 
         data = []
-        for payment in payments :
+        for payment in payments:
             payment_data = {
                 'id': payment.id,
-                'request' : payment.request_id,
-                'seller' : payment.receiver_id,
-                'created_at' : payment.created_at,
+                'request': payment.request_id,
+                'seller': payment.receiver_id,
+                'created_at': payment.created_at,
                 'state': payment.state.name,            
                 'amount': payment.amount,
                 'currency': payment.currency.name,
@@ -309,40 +321,60 @@ def execute(account_id, payment_id):
                     'message': str(exc)
                 }
 
-            transactions = Transaction.query.filter_by(id_payment=payment_id, state="created")
+            if payment.state == PaymentState("authorized"):
 
-            total = 0.0
-            for t in transactions:
-                t.state = "completed"
-                total += t.amount
+                transactions = Transaction.query.filter_by(id_payment=payment_id, state="created")
 
-            try:
+                authorized = True
 
-                # Check if he is enough money to pay
-                if total > account.balance:
-                    code = HTTPStatus.NOT_ACCEPTABLE
-                    raise Exception("The account does not have enough available amount")
+                for t in transactions:
+                    if t.state != TransactionState("authorized"):
+                        authorized = False
+                        break
+                if authorized:
+                    total = 0.0
+                    for t in transactions:
+                        t.state = "completed"
+                        total += t.amount
 
-                # Check if the total of the transactions pays the amount of the payment
-                if total != payment.amount:
-                    code = HTTPStatus.NOT_ACCEPTABLE
-                    raise Exception("The total of the transactions needs to be equals to the payment amount")
+                    try:
 
-                seller = Account.query.get(payment.receiver_id)
-                seller.balance += total
+                        # Check if he is enough money to pay
+                        if total > account.balance:
+                            code = HTTPStatus.NOT_ACCEPTABLE
+                            raise Exception("The account does not have enough available amount")
 
-                account.balance -= total
-                payment.state = "completed"
+                        # Check if the total of the transactions pays the amount of the payment
+                        if total != payment.amount:
+                            code = HTTPStatus.NOT_ACCEPTABLE
+                            raise Exception("The total of the transactions needs to be equals to the payment amount")
 
-                response = {
-                    'status': 'success',
-                    'message': 'The payment was executed'
-                }
+                        seller = Account.query.get(payment.receiver_id)
+                        seller.balance += total
 
-            except Exception as exc:
+                        account.balance -= total
+                        payment.state = "completed"
+
+                        response = {
+                            'status': 'success',
+                            'message': 'The payment was executed'
+                        }
+                    except Exception as exc:
+                        response = {
+                            'status': 'fail',
+                            'message': str(exc)
+                        }
+                else:
+                    code = HTTPStatus.METHOD_NOT_ALLOWED
+                    response = {
+                        'status': 'fail',
+                        'message': 'Transaction not authorized.'
+                    }
+            else:
+                code = HTTPStatus.METHOD_NOT_ALLOWED
                 response = {
                     'status': 'fail',
-                    'message': str(exc)
+                    'message': 'Payment not authorized.'
                 }
         else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
@@ -362,6 +394,7 @@ def execute(account_id, payment_id):
 
 # Authorize the payment
 @payment_controller.route('/payments/<uuid:payment_id>/authorize', methods=['POST'])
+@login_required
 def authorization_payment(account_id, payment_id):
     """
         Authorization the payment
@@ -390,9 +423,18 @@ def authorization_payment(account_id, payment_id):
                     code = HTTPStatus.NOT_FOUND
                     raise Exception("Payment not found")
 
-                if payment.state == "completed":
+                if payment.state == PaymentState("completed"):
                     code = HTTPStatus.CONFLICT
                     raise Exception('The payment is already completed')
+
+                if payment.state == PaymentState("pending"):
+                    payment.update_state("requested")
+
+                response = {
+                    'status': 'success',
+                    'payment': payment_id,
+                    'message': 'http://localhost:5000/payments/'+str(payment_id)+'/authorize/request'
+                }
 
             except Exception as exc:
                 response = {
@@ -400,15 +442,7 @@ def authorization_payment(account_id, payment_id):
                     'message': str(exc)
                 }
 
-            # Let's pretend there is an authorization, and you need to call an "authorization" function, but nothing
-            # happens internally.
-
-            response = {
-                'status': 'success',
-                'message': 'The payment was authorized'
-            }
-
-        else :
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
@@ -421,8 +455,114 @@ def authorization_payment(account_id, payment_id):
             'message': 'Try Again.'
         }
 
-    #return msg.message(code, response)
-    return render_template("templates/index.html")
+    return msg.message(code, response)
+
+
+@payment_controller.route('/payments/<uuid:payment_id>/authorize/request', methods=['GET', 'POST'])
+def authorize(payment_id):
+    code = HTTPStatus.OK
+    msg = Message()
+
+    try:
+
+        payment = Payment.query.get(payment_id)
+        account_buyer = Account.query.filter_by(id=payment.account_id).first()
+        account_seller = Account.query.filter_by(id=payment.receiver_id).first()
+
+        payment_data = {
+            'id': payment.id,
+            'buyer_user_id': str(account_buyer.user_id),
+            'buyer': str(account_buyer.id),
+            'seller_user_id': str(account_seller.user_id),
+            'seller': str(account_seller.id),
+            'created_at': payment.created_at,
+            'state': payment.state.name,
+            'amount': payment.amount,
+            'currency': payment.currency.name,
+            'reference': payment.reference
+        }
+
+        transactions = Transaction.query.filter_by(id_payment=payment_id)
+
+        data = []
+        for transaction in transactions:
+            transaction_data = {
+                'amount': transaction.amount,
+                'emission_date': transaction.emission_date.date(),
+                'emission_time': transaction.emission_date.strftime("%H:%M:%S"),
+                'state': transaction.state.name,
+                'update_date': transaction.update_date,
+                'reference': transaction.reference
+            }
+            data.append(transaction_data)
+
+        if payment.state == PaymentState("requested"):
+            return render_template('index.html', payment=payment_data, transactions=data)
+        else:
+            code = HTTPStatus.METHOD_NOT_ALLOWED
+            response = {
+                'status': 'fail',
+                'message': 'You dont have any authorization request.'
+            }
+
+    except Exception as exc:
+        code = HTTPStatus.INTERNAL_SERVER_ERROR
+        response = {
+            'status': 'fail',
+            'message': str(exc)
+        }
+
+    return msg.message(code, response)
+
+
+@payment_controller.route('/payments/<uuid:payment_id>/authorize/response', methods=['GET', 'POST'])
+@login_required
+def authorize_response(account_id, payment_id):
+    code = HTTPStatus.OK
+    msg = Message()
+
+    account = Account.query.filter_by(id=account_id).first()
+
+    if account:
+
+        if account.state:
+
+            try:
+
+                payment = Payment.query.get(payment_id)
+
+                if payment.state == PaymentState("requested"):
+                    payment.update_state("authorized")
+                    transactions = Transaction.query.filter_by(id_payment=payment_id)
+                    for t in transactions:
+                        t.update_state("authorized")
+                else:
+                    code = HTTPStatus.METHOD_NOT_ALLOWED
+                    response = {
+                        'status': 'fail',
+                        'message': 'You dont have any authorization request.'
+                    }
+
+            except Exception as exc:
+                code = HTTPStatus.INTERNAL_SERVER_ERROR
+                response = {
+                    'status': 'fail',
+                    'message': str(exc)
+                }
+        else:
+            code = HTTPStatus.METHOD_NOT_ALLOWED
+            response = {
+                'status': 'fail',
+                'message': 'Your number account is desactivated.'
+            }
+
+    else:
+        code = HTTPStatus.INTERNAL_SERVER_ERROR
+        response = {
+            'status': 'fail',
+            'message': 'Try Again.'
+        }
+    return msg.message(code, response)
 
 # Get all the transactions
 @payment_controller.route('/payments/<uuid:payment_id>/transactions', methods=['GET'])
@@ -471,7 +611,8 @@ def get_transactions(account_id, payment_id):
                     'emission_date': transaction.emission_date,
                     'state': transaction.state.name,
                     'update_date': transaction.update_date,
-                    'id_payment': transaction.id_payment
+                    'id_payment': transaction.id_payment,
+                    'reference': transaction.reference
                 }
                 data.append(transaction_data)
 
@@ -479,7 +620,7 @@ def get_transactions(account_id, payment_id):
                 'status': 'success',
                 'transactions': data
             }
-        else :
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',

@@ -15,9 +15,9 @@ services:
       POSTGRES_DB: payment
       POSTGRES_USER: payment
       POSTGRES_PASSWORD: payment
-      PGPORT : 5432
+      PGPORT : 5433
     ports:
-      - '5432:5432'
+      - '5433:5433'
     network_mode : "host"
   gunicorn:
     build: .

@@ -4,9 +4,12 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static', static_url_path='/static')
+CORS(app, support_credentials=True)
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
@@ -16,7 +19,7 @@ POSTGRES = {
     'pw': 'payment',
     'db': 'payment',
     'host': '127.0.0.1',
-    'port': '5432',
+    'port': '5433',
 }
 
 DB_URL = 'postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % POSTGRES
@@ -56,3 +59,5 @@ def home():
         'status': 'success'
     }
     return jsonify(response), 200
+
+

@@ -1,17 +1,47 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, render_template
 from server import db
 from server.auxiliar_functions import Auxiliar, Message
 from server.user_controller import login_required
-from server.models import Account, Active_Sessions
+from server.models import Account
 from http import HTTPStatus
 from iso4217 import Currency
+from flask_cors import cross_origin
 import uuid
 
 # CONFIG
-account_controller = Blueprint('account', __name__)
+account_controller = Blueprint('account', __name__, template_folder='server/templates', static_folder='server/static')
 
 
-@account_controller.route('/account', methods=['POST'])
+@account_controller.route('/account/connection', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def test_connection():
+    msg = Message()
+    response = {
+        'status': 'success'
+    }
+    return msg.message(HTTPStatus.OK, response)
+
+
+@account_controller.route('/account/trans', methods=['GET'])
+def get_trans():
+    msg = Message()
+    transdev_account = Account.find_by_id("529116cc-33cc-4185-a915-77192a9658c2")
+    cp_account = Account.find_by_id("299b18aa-09c2-4849-8cb6-ae14a488d144")
+    metro_account = Account.find_by_id("32a4c1d3-3e18-40f4-be61-d09cdbefdf30")
+
+    response = {
+        'status': 'success',
+        'carriers':
+        {
+            'Transdev': transdev_account.id,
+            'CP': cp_account.id,
+            'metro': metro_account.id
+        }
+    }
+    return msg.message(HTTPStatus.OK, response)
+
+
+@account_controller.route('/account/', methods=['POST'])
 def create_account():
     """
         Add an account with a user id
@@ -249,3 +279,8 @@ def account_info(account_id):
 
     return msg.message(code, response)
 
+
+@account_controller.route('/account/login', methods=['GET', 'POST'])
+@cross_origin(supports_credentials=True)
+def login():
+    return render_template('login.html')

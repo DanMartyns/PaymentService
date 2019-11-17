@@ -23,6 +23,8 @@ echo -e "\n${bold}* Execução do código no servidor *${normal}"
 sshpass -e ssh -t -t -o StrictHostKeyChecking=no grupo1@192.168.85.208 << EOF
 	cd PaymentService/
 	. venv/bin/activate
+	docker-compose stop
+	yes | docker-compose rm
 	docker-compose up -d --build
 	exit
 EOF

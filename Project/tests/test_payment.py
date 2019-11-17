@@ -12,18 +12,31 @@ from server.models import Payment
 def register_user(user_id, password, currency):
     headers = {'Content-Type': "application/json"}
     data = "{\"user_id\" : \""+str(user_id)+"\",\"currency\" : \""+currency+"\", \"password\" : \""+password+"\"}"
+    print(data)
     response = requests.post('http://localhost:5000/account', headers=headers, data=data)
+    print(response.text)
     return response
 
 
 def login_user(user_id, password):
     headers = {'Content-Type': "application/json"}
     data = "{\"user_id\" : \"" + str(user_id) + "\", \"password\" : \"" + password + "\"}"
-    response = requests.post('http://localhost:5000/login', headers=headers, data=data)
+    response = requests.post('http://localhost:5000/user/login', headers=headers, data=data)
+    print("Login :", response.text)
     return response
 
 
 class TestAuth(unittest.TestCase):
+
+    def register_user(self):
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        headers = {'Content-Type': "application/json"}
+        data = "{\"user_id\" : \"" + str(user_id) + "\",\"currency\" : \"" + currency + "\", \"password\" : \"" + password + "\"}"
+        response = requests.post('http://192.168.85.208:5000/', headers=headers, data=data)
+        print(response.text)
 
     def test_create_payment_with_token(self):
         """ Test the creation of a payment with a token """
@@ -41,6 +54,7 @@ class TestAuth(unittest.TestCase):
         self.assertTrue(response.json()['message']['auth_token'])
         auth_token = response.json()['message']['auth_token']
         headers = {'Content-Type': "application/json", 'Authorization': auth_token}
+        print("Token : "+auth_token)
 
         user_id = uuid.uuid4()
         password = "my-precious"
@@ -61,7 +75,7 @@ class TestAuth(unittest.TestCase):
         data = "{\"request_id\" : \""+request_id+"\", \"seller_id\" : \""+seller+"\", \"currency\" : \"EUR\"," \
                                                                                  "\"reference\" : \""+reference+"\"} "
 
-        response = requests.post('http://0.0.0.0:5000/payments', headers=headers, data=data)
+        response = requests.post('http://localhost:5000/payments', headers=headers, data=data)
         print("Payment id "+response.json()['message']['id'])
 
         self.assertTrue(response.json()['message']['status'] == 'success')
@@ -96,6 +110,53 @@ class TestAuth(unittest.TestCase):
         response = requests.post('http://0.0.0.0:5000/payments', headers=headers, data=data)
 
         self.assertTrue(response.status_code == 401)
+
+    def test_authorization_with_token(self):
+        """ Test authorization the payment with a token """
+
+        print(" --------------------------- Test 1 - Authorization ( with token ) ----------------------------")
+
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        # This user will be the buyer
+        register_user(user_id, password, currency)
+        response = login_user(user_id, password)
+
+        self.assertTrue(response.json()['message']['auth_token'])
+        auth_token = response.json()['message']['auth_token']
+        headers = {'Content-Type': "application/json", 'Authorization': auth_token}
+
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        # This user will be the seller user
+        seller_info = register_user(user_id, password, currency)
+
+        # String identifying the product
+        request_id = "bilhete"
+
+        # A Product Description
+        reference = "Bilhete entre Porto e Lisboa"
+
+        # The seller id
+        seller = seller_info.json()['message']['account']['id']
+
+        data = "{\"request_id\" : \"" + request_id + "\", \"seller_id\" : \"" + seller + "\", \"currency\" : \"EUR\"," \
+                                                                                         "\"reference\" : \"" + reference + "\"} "
+
+        response = requests.post('http://0.0.0.0:5000/payments', headers=headers, data=data)
+
+        self.assertTrue(response.json()['message']['status'] == 'success')
+        self.assertTrue(response.json()['message']['id'])
+        self.assertEqual(response.json()['code'], 201)
+
+        payment = response.json()['message']['id']
+        print("Payment : "+payment)
+        response = requests.post('http://0.0.0.0:5000/payments/'+payment+'/authorize', headers=headers)
+        print(response.text)
 
     def test_create_transaction_with_token(self):
         """ Test the creation of a transaction with a token """
@@ -943,4 +1004,54 @@ class TestAuth(unittest.TestCase):
         self.assertTrue(response.json()['message']['transaction']['state'] == 'created')
         self.assertEqual(response.json()['code'], 200)
 
+    def test_authorize_payment(self):
+        """ Test the creation of a payment with a token """
 
+        print(" --------------------------- Test 1 - Create Payment ( with token ) ----------------------------")
+
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        # This user will be the buyer
+        register_user(user_id, password, currency)
+        response = login_user(user_id, password)
+
+        self.assertTrue(response.json()['message']['auth_token'])
+        auth_token = response.json()['message']['auth_token']
+        headers = {'Content-Type': "application/json", 'Authorization': auth_token}
+        print("Token : "+auth_token)
+
+        user_id = uuid.uuid4()
+        password = "my-precious"
+        currency = "EUR"
+
+        # This user will be the seller user
+        seller_info = register_user(user_id, password, currency)
+
+        # String identifying the product
+        request_id = "bilhete"
+
+        # A Product Description
+        reference = "Bilhete entre Lisboa e Porto para teste"
+
+        # The seller id
+        seller = seller_info.json()['message']['account']['id']
+
+        data = "{\"request_id\" : \""+request_id+"\", \"seller_id\" : \""+seller+"\", \"currency\" : \"EUR\"," \
+                                                                                 "\"reference\" : \""+reference+"\"} "
+
+        response = requests.post('http://localhost:5000/payments', headers=headers, data=data)
+        payment_id = response.json()['message']['id']
+
+        reference = "Bilhete de ida"
+        data = "{\"amount\" : 20.0,\"reference\" : \"" + reference + "\"}"
+        requests.post('http://0.0.0.0:5000/payments/' + payment_id + '/transactions', headers=headers, data=data)
+
+        reference = "Bilhete de volta"
+        data = "{\"amount\" : 25.0,\"reference\" : \"" + reference + "\"}"
+        requests.post('http://0.0.0.0:5000/payments/' + payment_id + '/transactions', headers=headers, data=data)
+
+        auth = requests.post('http://localhost:5000/payments/'+str(payment_id)+'/authorize', headers=headers)
+
+        print("Authorize " + str(auth.json()))

@@ -10,10 +10,28 @@ from sqlalchemy.dialects.postgresql import UUID
 from server import db, bcrypt, app
 
 
+@app.before_first_request
+def initialize_database():
+    transdev = "529116cc-33cc-4185-a915-77192a9658c2"
+    cp = "299b18aa-09c2-4849-8cb6-ae14a488d144"
+    metro = "32a4c1d3-3e18-40f4-be61-d09cdbefdf30"
+
+    ac = Account(user_id=transdev, password='transdev', currency=Currency('EUR'))
+    ac.save_to_db()
+
+    ac = Account(user_id=cp, password='cp', currency=Currency('EUR'))
+    ac.save_to_db()
+
+    ac = Account(user_id=metro, password='metro', currency=Currency('EUR'))
+    ac.save_to_db()
+
+
 class PaymentState(enum.Enum):
     pending = "pending"
+    requested = "requested"
     completed = "completed"
     cancelled = "cancelled"
+    authorized = "authorized"
 
 
 class TransactionState(enum.Enum):
@@ -22,6 +40,7 @@ class TransactionState(enum.Enum):
     completed = "completed"
     failed = "failed"
     cancelled = "cancelled"
+    authorized = "authorized"
 
 
 # MODELS
@@ -57,11 +76,16 @@ class Active_Sessions(BaseModel, db.Model):
     __tablename__ = 'active_sessions'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # User token
     token = db.Column(db.String(500), unique=True, nullable=False)
+    # The user id
+    user_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False)
+    # Date emission
     emission_at = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, token):
+    def __init__(self, token, user_id):
         self.token = str(token)
+        self.user_id = user_id
         self.emission_at = datetime.datetime.now()
 
     def __repr__(self):
@@ -113,7 +137,7 @@ class Account(BaseModel, db.Model):
         self.created_at = self.updated_at = datetime.datetime.utcnow().isoformat()
 
     def __repr__(self):
-        return '<user_id = '+self.user_id+', password = '+self.password+'>'
+        return '<user_id = '+str(self.user_id)+', password = '+self.password+'>'
 
     @classmethod
     def find_by_id(cls, user_id):
@@ -131,7 +155,7 @@ class Account(BaseModel, db.Model):
         """
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=600),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=3600),
                 'iat': datetime.datetime.utcnow(),
                 'sub': str(user_id)
             }
@@ -174,13 +198,13 @@ class Payment(BaseModel, db.Model):
     __tablename__ = 'payment'
 
     # The payment id
-    id = db.Column(UUID(as_uuid=True),server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The "product" id
-    request_id = db.Column(db.String(40),unique=True)
+    request_id = db.Column(db.String(40))
     # The buyer account
-    account_id = db.Column(UUID(as_uuid=True),db.ForeignKey("account.id"), unique=True, nullable=False)
+    account_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), unique=True, nullable=False)
     # The seller account 	
-    receiver_id = db.Column(UUID(as_uuid=True),db.ForeignKey("account.id"), unique=True, nullable=False) 	
+    receiver_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), unique=True, nullable=False)
     # The date when the payment was made
     created_at = db.Column(db.DateTime, nullable=False)
     # The date when the payment was made
@@ -211,6 +235,18 @@ class Payment(BaseModel, db.Model):
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
+
+    def update_state(self, value):
+        self.state = PaymentState(value)
+        db.session.commit()
+
+    def json(self):
+        """
+            Define a base way to jsonify models, dealing with datetime objects
+        """
+        return {
+            column: value if not isinstance(value, datetime.date) else value.strftime('%Y-%m-%d') for column, value in self._to_dict().items()
+        }
 
 
 class Transaction(BaseModel, db.Model):
@@ -246,4 +282,8 @@ class Transaction(BaseModel, db.Model):
 
     def save_to_db(self):
         db.session.add(self)
+        db.session.commit()
+
+    def update_state(self, value):
+        self.state = TransactionState(value)
         db.session.commit()

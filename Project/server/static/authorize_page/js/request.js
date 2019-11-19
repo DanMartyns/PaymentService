@@ -10,6 +10,12 @@ function setCookie(cname, cvalue, exdays) {
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
+/*     TEST CONNECTION     */
+function connection() {
+    fetch("http://192.168.85.208/account/connection")
+    .then(r => r.json().then(function(data){ console.log("Status Message :", data.message.status) }) );
+}
+
 /*        GET COOKIE     */
 function getCookie(cname) {
   var name = cname + "=";
@@ -26,81 +32,41 @@ function getCookie(cname) {
   }
   return "";
 }
-/*     TEST CONNECTION     */
-function connection() {
-    fetch("http://192.168.85.208/account/connection")
-    .then(r => r.json().then(function(data){ console.log("Status Message :", data.message.status) }) );
-}
 
 window.addEventListener('load', function () {
-
-    if( getCookie('token') == "" ){
-        const url = window.location.href
-        payment_id = url.split("/")[4]
-        setCookie("payment", payment_id, 1)
-        location.replace("http://localhost:5000/account/login");
-    }
-    else {
-        document.getElementById("authorize").addEventListener("click", authorize);
-    }
-
+    //console.log(getCookie('payment'))
+    //const url = window.location.href
+    //payment_id = url.split("/")[4]
+    //setCookie("payment", payment_id, 1)
+    document.getElementById("authorize").addEventListener("click", authorize);
 });
 
-/*     PRINT TRANSACTIONS
-function repeatTransactionDiv(transactionName){
-    return '<div class="col-md-4 col-sm-6"> \
-        <div class="service-block"> \
-            <div class="pull-left bounce-in"> \
-                <i class="fa fa-money fa fa-md"></i> \
-            </div> \
-            <div class="media-body fade-up"> \
-                <h3 class="media-heading">'+transactionName+'</h3> \
-                <p>Nay middleton him admitting consulted and behaviour son household. Recurred advanced he oh together entrance speedily suitable. Ready tried gay state fat could boy its among shall.</p> \
-            </div> \
-        </div> \
-    </div>'
-}
-
-async function loadInfo(){
-    try{
-        const rawResponse = await fetch('http://localhost:5000/payments', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({user_id:  document.getElementsByName('user_id')[0].value, password: document.getElementsByName('pass')[0].value})
-        });
-        const content = await rawResponse.json();
-
-        var container = document.getElementById('services')
-
-        for (var i = 0; i < 3; i++){
-            container.innerHTML += repeatTransactionDiv('Bilhete de ida')
-        }
-        for (var i = 0; i < 3; i++){
-            container.innerHTML += repeatTransactionDiv('Bilhete de volta')
-        }
-    } catch(error){
-        logMyErrors(error);
-    }
+/*     Check Token
+function checkToken(token){
+    fetch("http://localhost:5000/user/check/"+getCookie('token'))
+    .then( response => { return response.text(); })
+    .then( result => console.log(result));
 }
 */
 /*     AUTHORIZE     */
-async function authorize(){
-    try{
-        const payment = getCookie('payment')
-        const rawResponse = await fetch('http://localhost:5000/payments/'+payment+'/authorize/response', { //TODO: change payment_id
+function authorize(e){
+        e.preventDefault();
+        payment = getCookie('payment')
+        token = getCookie('token')
+        let data = {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
-              'Authorization' : payment
-            },
+              'Authorization' : token
+            }
+        }
+        fetch('http://localhost:5000/payments/'+payment+'/authorize/response', data)
+        .then(response =>  response.json())
+        .then(value => {
+            console.log(value)
+        })
+        .catch(function(err) {
+            console.log(err)
         });
-        const content = await rawResponse.json();
-        console.log(content); //TODO: return successPage.html, telling the payment was successful authorized
-    } catch(error){
-        logMyErrors(error);
-    }
 }

@@ -155,7 +155,7 @@ class Account(BaseModel, db.Model):
         """
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=3600),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1, seconds=3600),
                 'iat': datetime.datetime.utcnow(),
                 'sub': str(user_id)
             }

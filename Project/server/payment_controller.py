@@ -52,7 +52,7 @@ def create_payment(account_id):
                 raise Exception("Missing arguments")
 
             # Flag to check if account exists
-            receiver = Account.query.get(seller_id)        
+            receiver = Account.query.get(seller_id)
 
             # Validate parameters
             if not aux.validate_uuid(seller_id) or not receiver:
@@ -315,24 +315,12 @@ def execute(account_id, payment_id):
                     code = HTTPStatus.CONFLICT
                     raise Exception("The payment is already completed")
 
-            except Exception as exc:
-                response = {
-                    'status': 'fail',
-                    'message': str(exc)
-                }
+                if payment.state == PaymentState("authorized"):
 
-            if payment.state == PaymentState("authorized"):
+                    transactions = Transaction.query.filter_by(id_payment=payment_id, state="created")
 
-                transactions = Transaction.query.filter_by(id_payment=payment_id, state="created")
-
-                authorized = True
-
-                for t in transactions:
-                    if t.state != TransactionState("authorized"):
-                        authorized = False
-                        break
-                if authorized:
                     total = 0.0
+
                     for t in transactions:
                         t.state = "completed"
                         total += t.amount
@@ -368,20 +356,19 @@ def execute(account_id, payment_id):
                     code = HTTPStatus.METHOD_NOT_ALLOWED
                     response = {
                         'status': 'fail',
-                        'message': 'Transaction not authorized.'
+                        'message': 'Payment not authorized.'
                     }
-            else:
-                code = HTTPStatus.METHOD_NOT_ALLOWED
+            except Exception as exc:
                 response = {
                     'status': 'fail',
-                    'message': 'Payment not authorized.'
+                    'message': str(exc)
                 }
         else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
                 'message': 'Your number account is desactivated.'
-            }  
+            }
     else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
@@ -465,7 +452,10 @@ def authorize(payment_id):
 
     try:
 
-        payment = Payment.query.get(payment_id)
+        payment = Payment.query.filter_by(id=payment_id).first()
+        print("Ver apenas se entra ")
+        print("ID do pagamento:", payment.id)
+        print("Estado do pagamento: ", payment.state)
         account_buyer = Account.query.filter_by(id=payment.account_id).first()
         account_seller = Account.query.filter_by(id=payment.receiver_id).first()
 
@@ -516,51 +506,37 @@ def authorize(payment_id):
 
 
 @payment_controller.route('/payments/<uuid:payment_id>/authorize/response', methods=['GET', 'POST'])
-@login_required
-def authorize_response(account_id, payment_id):
+def authorize_response(payment_id):
     code = HTTPStatus.OK
     msg = Message()
 
-    account = Account.query.filter_by(id=account_id).first()
+    try:
 
-    if account:
+        payment = Payment.query.get(payment_id)
 
-        if account.state:
+        if payment.state == PaymentState("requested"):
+            payment.update_state("authorized")
 
-            try:
+            print("Estado do pagamento: ", payment.state)
 
-                payment = Payment.query.get(payment_id)
+            transactions = Transaction.query.filter_by(id_payment=payment_id)
 
-                if payment.state == PaymentState("requested"):
-                    payment.update_state("authorized")
-                    transactions = Transaction.query.filter_by(id_payment=payment_id)
-                    for t in transactions:
-                        t.update_state("authorized")
-                else:
-                    code = HTTPStatus.METHOD_NOT_ALLOWED
-                    response = {
-                        'status': 'fail',
-                        'message': 'You dont have any authorization request.'
-                    }
+            for t in transactions:
+                t.update_state("authorized")
 
-            except Exception as exc:
-                code = HTTPStatus.INTERNAL_SERVER_ERROR
-                response = {
-                    'status': 'fail',
-                    'message': str(exc)
-                }
+                print("Estado da transição: ", t.state)
         else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
-                'message': 'Your number account is desactivated.'
+                'message': 'You dont have any authorization request.'
             }
 
-    else:
+    except Exception as exc:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
             'status': 'fail',
-            'message': 'Try Again.'
+            'message': str(exc)
         }
     return msg.message(code, response)
 

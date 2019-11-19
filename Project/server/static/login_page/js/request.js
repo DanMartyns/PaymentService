@@ -33,42 +33,38 @@ function connection() {
     .then(r => r.json().then(function(data){ console.log("Status Message :", data.message.status) }) );
 }
 
+/*     Check Token     */
+function checkToken(token){
+    fetch("http://localhost:5000/user/check/"+getCookie('token'))
+    .then( response => { return response.text(); })
+    .then( result => console.log(result));
+}
+
 window.addEventListener('load', function () {
-    if (getCookie('token') != ""){
-        const url = "http://localhost:5000/payments/"+String(getCookie('payment'))+"/authorize/request"
-        location.replace(url);
-    } else {
-        document.getElementById("login").addEventListener("click", login);
-    }
+    document.getElementById("login").addEventListener("click", login);
 });
 
 /*     LOGIN     */
-async function login(){
-    try{
-        debugger;
-        var rawResponse = await fetch('http://localhost:5000/user/login', {
+ function login(e){
+        e.preventDefault();
+        let data = {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({user_id:  document.getElementsByName('user_id')[0].value, password: document.getElementsByName('pass')[0].value})
+        }
+        fetch('http://localhost:5000/user/login', data)
+        .then(response =>  response.json())
+        .then(value => {
+            let token = value['message']['auth_token'];
+            setCookie('token', token);
+            let payment = getCookie('payment')
+            let url = "http://localhost:5000/payments/"+payment+"/authorize/request"
+            window.location.assign(url);
+        })
+        .catch(function(err) {
+            console.log(err)
         });
-        var content = await rawResponse.json();
-        window.alert(content.responseText['message'] )
-        await saveandreplace(content);
-    } catch(error){
-        logMyErrors(error);
-    }
-}
-
-function saveandreplace(content){
-    try {
-        const token = content['message']['auth_token'];
-        setCookie('token', token, 1);
-        const url = "http://localhost:5000/payments/"+String(getCookie('payment'))+"/authorize/request"
-        location.replace(url);
-    } catch (error) {
-        logMyErrors(error);
-    }
 }

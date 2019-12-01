@@ -6,28 +6,24 @@
     <meta name="description" content="Payment Service">
     <meta name="author" content="Daniel Martins">
     <title>Login</title>
-    <link type="text/css" href="{{ url_for('static', filename='login_page/css/login.css') }}" rel="stylesheet">
-    <script src="{{ url_for('static', filename='login_page/js/request.js') }}"></script>
+    <link type="text/css" href="http://192.168.85.208/styles/static/login_page/css/login.css" rel="stylesheet">
+    <script src="http://192.168.85.208/styles/static/login_page/js/request.js"></script>
 </head>
 <body>
-  <input type="radio" checked id="toggle--login" name="toggle" class="ghost" />
-  <input type="radio" id="toggle--signup" name="toggle" class="ghost" />
+    <div>
+        <form class="form form--login framed" id="form">
+            <h1 class="framed_login"> Payment Service </h1>
+            <input name="user_id" placeholder="Username" class="input input--top" />
+            <input name="pass" type="password" placeholder="Password" class="input" />
+            <button id="login" class="input input--submit" style="text-align: center;">
+                Login
+            </button>
+        </form>
+    </div>
 
-  <h1 class="framed framed_login"> Payment Service </h1>
-  <form class="form form--login framed" id="form">
-    <input name="user_id" placeholder="Username" class="input input--top" />
-    <input name="pass" type="password" placeholder="Password" class="input" />
-    <button id="login" class="input input--submit" style="text-align: center;">
-        Login
-    </button>
-  </form>
-
-  </div>
-
-  <div class="photo-cred">
-    <a class="text text--small">Login page created by <b>Daniel Martins</b></a>
-  </div>
-
-  <div class="fullscreen-bg"></div>
+    <div class="photo-cred">
+        <a class="text text--small">Login page created by <b>Daniel Martins</b></a>
+    </div>
+    <div class="fullscreen-bg"></div>
 </body>
 </html>

@@ -12,14 +12,14 @@ from server.models import Account
 def register_user(user_id, password, currency):
     headers = {'Content-Type': "application/json"}    
     data = "{\"user_id\" : \""+str(user_id)+"\",\"currency\" : \""+currency+"\", \"password\" : \""+password+"\"}"
-    response = requests.post('http://localhost:5000/account', headers=headers, data=data)
+    response = requests.post('http://192.168.85-208/account', headers=headers, data=data)
     return response
 
 
 def login_user(user_id, password):
     headers = {'Content-Type': "application/json"}
     data = "{\"user_id\" : \"" + str(user_id) + "\", \"password\" : \"" + password + "\"}"
-    response = requests.post('http://localhost:5000/login', headers=headers, data=data)
+    response = requests.post('http://192.168.85-208/login', headers=headers, data=data)
     return response
 
 
@@ -86,7 +86,7 @@ class TestAuth(unittest.TestCase):
 
         headers = {'Content-Type': "application/json"}
         data = "{\"amount\" : 20.0}"
-        response = requests.post('http://localhost:5000/amount', headers=headers, data=data)
+        response = requests.post('http://192.168.85-208/amount', headers=headers, data=data)
         print(response.text)
 
     def test_access_methods_with_token(self):
@@ -106,7 +106,7 @@ class TestAuth(unittest.TestCase):
         auth_token = response.json()['message']['auth_token']
         headers = {'Content-Type': "application/json", 'Authorization': auth_token}
         data = "{\"amount\" : 20.0}"
-        response = requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+        response = requests.post('http://192.168.85-208/account/amount', headers=headers, data=data)
 
         self.assertTrue(response.json()['message']['status'] == 'success')
         self.assertTrue(response.json()['message']['message'] == 'The amount was added.')
@@ -130,9 +130,9 @@ class TestAuth(unittest.TestCase):
         headers = {'Content-Type': "application/json", 'Authorization': auth_token}
 
         data = "{\"amount\" : 20.0}"
-        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
-        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
-        requests.post('http://localhost:5000/account/amount', headers=headers, data=data)
+        requests.post('http://192.168.85-208/account/amount', headers=headers, data=data)
+        requests.post('http://192.168.85-208/account/amount', headers=headers, data=data)
+        requests.post('http://192.168.85-208/account/amount', headers=headers, data=data)
 
         # Get the buyer account information to check if the money comes in
         response = requests.get('http://0.0.0.0:5000/account', headers=headers)

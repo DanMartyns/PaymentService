@@ -10,7 +10,7 @@ import uuid
 
 
 # CONFIG
-payment_controller = Blueprint('payment', __name__, template_folder='server/templates', static_folder='server/static')
+payment_controller = Blueprint('payment', __name__, template_folder='templates', static_folder='static/static')
 
 
 @payment_controller.route('/payments/connection', methods=['GET'])
@@ -49,7 +49,11 @@ def create_payment(account_id):
             # Check if there is some missing argument
             if not request_id or not seller_id or not currency or not reference:
                 code = HTTPStatus.BAD_REQUEST
-                raise Exception("Missing arguments")
+                response = {
+                    'status': 'fail',
+                    'message': 'Missing arguments.'
+                }
+                return msg.message(code, response)
 
             # Flag to check if account exists
             receiver = Account.query.get(seller_id)
@@ -57,19 +61,28 @@ def create_payment(account_id):
             # Validate parameters
             if not aux.validate_uuid(seller_id) or not receiver:
                 code = HTTPStatus.BAD_REQUEST
-                raise Exception("The number receiver account is wrong or they don't exist")
+                response = {
+                    'status': 'fail',
+                    'message': 'The number receiver account is wrong or they dont exist.'
+                }
+                return msg.message(code, response)
 
             # Check if the currency is valid
             if not isinstance(Currency(currency), Currency):
                 code = HTTPStatus.BAD_REQUEST
-                raise Exception("Your currency is wrong. Uses the international standard that defines three-letter "
-                                "codes as currencies established by the International Organization. (ISO 4217)")
+                response = {
+                    'status': 'fail',
+                    'message': 'Your currency is wrong. Uses the international standard that defines three-letter "\
+                                "codes as currencies established by the International Organization. (ISO 4217).'
+                }
+                return msg.message(code, response)
 
         except Exception as exc:
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
             response = {
                 'status': 'fail',
                 'message': str(exc)
-            }                    
+            }
 
         # Save the new payment
         # Everytime that we create a payment, his state is "pending"
@@ -105,26 +118,33 @@ def get_payments(account_id):
     account = Account.query.filter_by(id=account_id).first()
 
     if account:
-        payments = Payment.query.filter_by(account_id=account.id)
+        try:
+            payments = Payment.query.filter_by(account_id=account.id)
 
-        data = []
-        for payment in payments:
-            payment_data = {
-                'id': payment.id,
-                'request': payment.request_id,
-                'seller': payment.receiver_id,
-                'created_at': payment.created_at,
-                'state': payment.state.name,            
-                'amount': payment.amount,
-                'currency': payment.currency.name,
-                'reference': payment.reference
+            data = []
+            for payment in payments:
+                payment_data = {
+                    'id': payment.id,
+                    'request': payment.request_id,
+                    'seller': payment.receiver_id,
+                    'created_at': payment.created_at,
+                    'state': payment.state.name,
+                    'amount': payment.amount,
+                    'currency': payment.currency.name,
+                    'reference': payment.reference
+                }
+                data.append(payment_data)
+
+            response = {
+                'status': 'success',
+                'payments': data
             }
-            data.append(payment_data)
-
-        response = {
-            'status': 'success',
-            'payments': data
-        }
+        except Exception as err:
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
+            response = {
+                'status': 'fail',
+                'message': str(err)
+            }
 
     else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
@@ -165,14 +185,22 @@ def create_transaction(account_id, payment_id):
                 # Check if missing arguments
                 if not amount or not reference:
                     code = HTTPStatus.BAD_REQUEST
-                    raise Exception("The amount or reference values is missing")
+                    response = {
+                        'status': 'fail',
+                        'message': "The amount or reference values is missing"
+                    }
+                    return msg.message(code, response)
 
                 payment = Payment.query.get(payment_id)
 
                 # Check if payments exists
                 if not payment:
                     code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    response = {
+                        'status': 'fail',
+                        'message': "Payment not found"
+                    }
+                    return msg.message(code, response)
 
             except Exception as excep:
                 return msg.message(code, str(excep))
@@ -187,7 +215,7 @@ def create_transaction(account_id, payment_id):
                 'status': 'success',
                 'id': transaction.id
             }                
-        else :
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
@@ -222,65 +250,83 @@ def cancel_transaction(account_id, payment_id, transaction):
     code = HTTPStatus.OK
     msg = Message()
 
-    account = Account.query.filter_by(id=account_id).first()
+    try:
+        account = Account.query.filter_by(id=account_id).first()
 
-    if account:
-        if account.state:
-            try:
+        if account:
+            if account.state:
+                try:
 
-                payment = Payment.query.get(payment_id)
+                    payment = Payment.query.get(payment_id)
 
-                # Check if payments exists
-                if not payment:
-                    code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    # Check if payments exists
+                    if not payment:
+                        code = HTTPStatus.NOT_FOUND
+                        response = {
+                            'status': 'fail',
+                            'message': "Payment not found"
+                        }
+                        return msg.message(code, response)
 
-                transaction = Transaction.query.get(transaction)
+                    transaction = Transaction.query.get(transaction)
 
-                # Check if transaction exists
-                if not transaction:
-                    code = HTTPStatus.NOT_FOUND
-                    raise Exception("Transaction not found")
+                    # Check if transaction exists
+                    if not transaction:
+                        code = HTTPStatus.NOT_FOUND
+                        response = {
+                            'status': 'fail',
+                            'message': "Transaction not found"
+                        }
+                        return msg.message(code, response)
 
-                if transaction.state == "completed":
-                    code = HTTPStatus.CONFLICT
-                    raise Exception("The transaction is already completed, you cannot cancel")
+                    if transaction.state == PaymentState("completed"):
+                        code = HTTPStatus.CONFLICT
+                        response = {
+                            'status': 'fail',
+                            'message': "The transaction is already completed, you cannot cancel"
+                        }
+                        return msg.message(code, response)
 
-                # Calculate the amount that will no longer be included in the final payment
-                diff = payment.amount - transaction.amount
+                    # Calculate the amount that will no longer be included in the final payment
+                    diff = payment.amount - transaction.amount
 
-                payment.amount -= diff
+                    payment.amount -= diff
 
-                # The transaction was cancelled
-                transaction.state = "cancelled"
+                    # The transaction was cancelled
+                    transaction.state = PaymentState("cancelled")
 
-                response = {
-                    'status': 'success',
-                    'message': 'The transaction '+str(transaction.id)+' was cancelled'
-                }
+                    response = {
+                        'status': 'success',
+                        'message': 'The transaction '+str(transaction.id)+' was cancelled'
+                    }
 
-            except Exception as exc:
+                except Exception as exc:
+                    response = {
+                        'status': 'fail',
+                        'message': str(exc)
+                    }
+            else:
+                code = HTTPStatus.METHOD_NOT_ALLOWED
                 response = {
                     'status': 'fail',
-                    'message': str(exc)
+                    'message': 'Your number account is desactivated.'
                 }
         else:
-            code = HTTPStatus.METHOD_NOT_ALLOWED
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
             response = {
                 'status': 'fail',
-                'message': 'Your number account is desactivated.'
-            }  
-    else:
+                'message': 'Try Again.'
+            }
+    except Exception as err:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
             'status': 'fail',
-            'message': 'Try Again.'
+            'message': str(err)
         }
-
     return msg.message(code, response)
 
 # Execute the payment
-@payment_controller.route('/payments/<uuid:payment_id>/execute', methods=['POST'])
+@payment_controller.route('/payments/<uuid:payment_id>/execute', methods=['GET', 'POST'])
 @login_required
 def execute(account_id, payment_id):
     """
@@ -294,13 +340,13 @@ def execute(account_id, payment_id):
         :rtype: dict | bytes
     """
 
-    code = HTTPStatus.CREATED
+    code = HTTPStatus.OK
     msg = Message()
 
     account = Account.query.filter_by(id=account_id).first()
 
     if account:
-        
+
         if account.state:
             try:
 
@@ -309,11 +355,19 @@ def execute(account_id, payment_id):
                 # Check if payments exists
                 if not payment:
                     code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    response = {
+                        'status': 'fail',
+                        'message': "Payment not found"
+                    }
+                    return msg.message(code, response)
 
-                if payment.state == "completed":
+                if payment.state == PaymentState("completed"):
                     code = HTTPStatus.CONFLICT
-                    raise Exception("The payment is already completed")
+                    response = {
+                        'status': 'fail',
+                        'message': "The payment is already completed"
+                    }
+                    return msg.message(code, response)
 
                 if payment.state == PaymentState("authorized"):
 
@@ -330,24 +384,24 @@ def execute(account_id, payment_id):
                         # Check if he is enough money to pay
                         if total > account.balance:
                             code = HTTPStatus.NOT_ACCEPTABLE
-                            raise Exception("The account does not have enough available amount")
-
-                        # Check if the total of the transactions pays the amount of the payment
-                        if total != payment.amount:
-                            code = HTTPStatus.NOT_ACCEPTABLE
-                            raise Exception("The total of the transactions needs to be equals to the payment amount")
+                            response = {
+                                'status': 'fail',
+                                'message': "The account does not have enough available amount"
+                            }
+                            return msg.message(code, response)
 
                         seller = Account.query.get(payment.receiver_id)
                         seller.balance += total
 
                         account.balance -= total
-                        payment.state = "completed"
+                        payment.state = PaymentState("completed")
 
                         response = {
                             'status': 'success',
                             'message': 'The payment was executed'
                         }
                     except Exception as exc:
+                        code = HTTPStatus.INTERNAL_SERVER_ERROR
                         response = {
                             'status': 'fail',
                             'message': str(exc)
@@ -359,6 +413,7 @@ def execute(account_id, payment_id):
                         'message': 'Payment not authorized.'
                     }
             except Exception as exc:
+                code = HTTPStatus.INTERNAL_SERVER_ERROR
                 response = {
                     'status': 'fail',
                     'message': str(exc)
@@ -408,11 +463,19 @@ def authorization_payment(account_id, payment_id):
                 # Check if payments exists
                 if not payment:
                     code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    response = {
+                        'status': 'fail',
+                        'message': "Payment not found"
+                    }
+                    return msg.message(code, response)
 
                 if payment.state == PaymentState("completed"):
                     code = HTTPStatus.CONFLICT
-                    raise Exception('The payment is already completed')
+                    response = {
+                        'status': 'fail',
+                        'message': "The payment is already completed"
+                    }
+                    return msg.message(code, response)
 
                 if payment.state == PaymentState("pending"):
                     payment.update_state("requested")
@@ -420,10 +483,11 @@ def authorization_payment(account_id, payment_id):
                 response = {
                     'status': 'success',
                     'payment': payment_id,
-                    'message': 'http://localhost:5000/payments/'+str(payment_id)+'/authorize/request'
+                    'message': 'http://192.168.85.208/payments/'+str(payment_id)+'/authorize/request'
                 }
 
             except Exception as exc:
+                code = HTTPStatus.INTERNAL_SERVER_ERROR
                 response = {
                     'status': 'fail',
                     'message': str(exc)
@@ -453,9 +517,6 @@ def authorize(payment_id):
     try:
 
         payment = Payment.query.filter_by(id=payment_id).first()
-        print("Ver apenas se entra ")
-        print("ID do pagamento:", payment.id)
-        print("Estado do pagamento: ", payment.state)
         account_buyer = Account.query.filter_by(id=payment.account_id).first()
         account_seller = Account.query.filter_by(id=payment.receiver_id).first()
 
@@ -514,23 +575,25 @@ def authorize_response(payment_id):
 
         payment = Payment.query.get(payment_id)
 
-        if payment.state == PaymentState("requested"):
-            payment.update_state("authorized")
-
-            print("Estado do pagamento: ", payment.state)
-
-            transactions = Transaction.query.filter_by(id_payment=payment_id)
-
-            for t in transactions:
-                t.update_state("authorized")
-
-                print("Estado da transição: ", t.state)
-        else:
+        if payment.state != PaymentState("requested"):
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
                 'message': 'You dont have any authorization request.'
             }
+            return msg.message(code, response)
+
+        payment.update_state("authorized")
+
+        transactions = Transaction.query.filter_by(id_payment=payment_id)
+
+        for t in transactions:
+            t.update_state("authorized")
+
+        response = {
+            'status': 'success',
+            'message': 'Your payment was authorized.'
+        }
 
     except Exception as exc:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
@@ -569,40 +632,42 @@ def get_transactions(account_id, payment_id):
                 # Check if payments exists
                 if not payment:
                     code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    response = {
+                        'status': 'fail',
+                        'message': "Payment not found"
+                    }
 
+                transactions = Transaction.query.filter_by(id_payment=payment_id)
+
+                data = []
+                for transaction in transactions:
+                    transaction_data = {
+                        'id': transaction.id,
+                        'amount': transaction.amount,
+                        'emission_date': transaction.emission_date,
+                        'state': transaction.state.name,
+                        'update_date': transaction.update_date,
+                        'id_payment': transaction.id_payment,
+                        'reference': transaction.reference
+                    }
+                    data.append(transaction_data)
+
+                response = {
+                    'status': 'success',
+                    'transactions': data
+                }
             except Exception as excep:
+                code = HTTPStatus.INTERNAL_SERVER_ERROR
                 response = {
                     'status': 'fail',
                     'message': str(excep)
                 }
-
-            transactions = Transaction.query.filter_by(id_payment=payment_id)
-
-            data = []
-            for transaction in transactions:
-                transaction_data = {
-                    'id': transaction.id,
-                    'amount': transaction.amount,
-                    'emission_date': transaction.emission_date,
-                    'state': transaction.state.name,
-                    'update_date': transaction.update_date,
-                    'id_payment': transaction.id_payment,
-                    'reference': transaction.reference
-                }
-                data.append(transaction_data)
-
-            response = {
-                'status': 'success',
-                'transactions': data
-            }
         else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',
                 'message': 'Your number account is desactivated.'
-            }  
-        return msg.message(code,response)
+            }
     else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
@@ -643,27 +708,33 @@ def get_transaction(account_id, payment_id, transaction):
                 # Check if payments exists
                 if not payment:
                     code = HTTPStatus.NOT_FOUND
-                    raise Exception("Payment not found")
+                    response = {
+                        'status': 'fail',
+                        'message': "Payment not found"
+                    }
+                    return msg.message(code, response)
 
-            except Exception as excep:
-                return msg.message(code, str(excep))
+                transaction = Transaction.query.get(transaction)
 
-            transaction = Transaction.query.get(transaction)
-
-            response = {
-                'status': 'success',
-                'transaction':
-                {
-                    'id': transaction.id,
-                    'amount': transaction.amount,
-                    'emission_date': transaction.emission_date,
-                    'state': transaction.state.name,
-                    'update_date': transaction.update_date,
-                    'id_payment': transaction.id_payment
+                response = {
+                    'status': 'success',
+                    'transaction':
+                    {
+                        'id': transaction.id,
+                        'amount': transaction.amount,
+                        'emission_date': transaction.emission_date,
+                        'state': transaction.state.name,
+                        'update_date': transaction.update_date,
+                        'id_payment': transaction.id_payment
+                    }
                 }
-            }
-
-        else :
+            except Exception as excep:
+                code = HTTPStatus.INTERNAL_SERVER_ERROR
+                response = {
+                    'status': 'fail',
+                    'message': str(excep)
+                }
+        else:
             code = HTTPStatus.METHOD_NOT_ALLOWED
             response = {
                 'status': 'fail',

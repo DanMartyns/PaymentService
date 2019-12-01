@@ -12,17 +12,14 @@ from server import db, bcrypt, app
 
 @app.before_first_request
 def initialize_database():
-    transdev = "529116cc-33cc-4185-a915-77192a9658c2"
-    cp = "299b18aa-09c2-4849-8cb6-ae14a488d144"
-    metro = "32a4c1d3-3e18-40f4-be61-d09cdbefdf30"
 
-    ac = Account(user_id=transdev, password='transdev', currency=Currency('EUR'))
+    ac = Account(user_id='transdev', password='transdev', currency=Currency('EUR'))
     ac.save_to_db()
 
-    ac = Account(user_id=cp, password='cp', currency=Currency('EUR'))
+    ac = Account(user_id='cp', password='cp', currency=Currency('EUR'))
     ac.save_to_db()
 
-    ac = Account(user_id=metro, password='metro', currency=Currency('EUR'))
+    ac = Account(user_id='metro', password='metro', currency=Currency('EUR'))
     ac.save_to_db()
 
 
@@ -79,7 +76,7 @@ class Active_Sessions(BaseModel, db.Model):
     # User token
     token = db.Column(db.String(500), unique=True, nullable=False)
     # The user id
-    user_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False)
+    user_id = db.Column(db.String(255), unique=True, nullable=False)
     # Date emission
     emission_at = db.Column(db.DateTime, nullable=False)
 
@@ -114,7 +111,7 @@ class Account(BaseModel, db.Model):
     # The account id
     id = db.Column(UUID(as_uuid=True), server_default=db.text("uuid_generate_v4()"), unique=True, primary_key=True)
     # The user id 									
-    user_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False)
+    user_id = db.Column(db.String(255), unique=True, nullable=False)
     # The password
     password = db.Column(db.String(255), nullable=False)
     # The ammount in his account
@@ -176,8 +173,7 @@ class Account(BaseModel, db.Model):
             if not is_active_token:
                 return 'Token invalid.'
             else:
-                print(payload['sub'])
-                return uuid.UUID(uuid.UUID(payload['sub']).hex) 
+                return payload['sub'] 
         except jwt.ExpiredSignatureError:
             return 'Signature expired. Please log in again.'
         except jwt.InvalidTokenError:
@@ -202,9 +198,9 @@ class Payment(BaseModel, db.Model):
     # The "product" id
     request_id = db.Column(db.String(40))
     # The buyer account
-    account_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), unique=True, nullable=False)
+    account_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), nullable=False)
     # The seller account 	
-    receiver_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), unique=True, nullable=False)
+    receiver_id = db.Column(UUID(as_uuid=True), db.ForeignKey("account.id"), nullable=False)
     # The date when the payment was made
     created_at = db.Column(db.DateTime, nullable=False)
     # The date when the payment was made

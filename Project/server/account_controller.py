@@ -9,7 +9,7 @@ from flask_cors import cross_origin
 import uuid
 
 # CONFIG
-account_controller = Blueprint('account', __name__, template_folder='server/templates', static_folder='server/static')
+account_controller = Blueprint('account', __name__, template_folder='templates', static_folder='static/static')
 
 
 @account_controller.route('/account/connection', methods=['GET'])
@@ -25,9 +25,9 @@ def test_connection():
 @account_controller.route('/account/trans', methods=['GET'])
 def get_trans():
     msg = Message()
-    transdev_account = Account.find_by_id("529116cc-33cc-4185-a915-77192a9658c2")
-    cp_account = Account.find_by_id("299b18aa-09c2-4849-8cb6-ae14a488d144")
-    metro_account = Account.find_by_id("32a4c1d3-3e18-40f4-be61-d09cdbefdf30")
+    transdev_account = Account.find_by_id("transdev")
+    cp_account = Account.find_by_id("cp")
+    metro_account = Account.find_by_id("metro")
 
     response = {
         'status': 'success',
@@ -52,41 +52,41 @@ def create_account():
     aux = Auxiliar()
     msg = Message()
 
-    user = Account.query.filter_by(user_id=uuid.UUID(uuid.UUID(request.json.get('user_id')).hex)).first()
+    user = Account.query.filter_by(user_id=request.json.get('user_id')).first()
     if not user:
         try:
             # Get parameters
-            user_id = uuid.UUID(uuid.UUID(request.json.get('user_id')).hex)
+            user_id = request.json.get('user_id')
             password = request.json.get('password')
             currency = request.json.get('currency').upper()
 
             # Validate the parameters
-            if not aux.validate_uuid(user_id):
+            if not isinstance(Currency(currency), Currency):
                 code = HTTPStatus.BAD_REQUEST
-                raise Exception("Your user_id is wrong. The user_id is not a universally unique identifier")
-            elif not isinstance(Currency(currency), Currency):
-                code = HTTPStatus.BAD_REQUEST
-                raise Exception("Currency's wrong. Use the international standard that defines three-letter codes as "
-                                "currencies established by the International Organization. (ISO 4217)")
-
-            # Save the account
-            ac = Account(user_id=user_id, password=password, currency=Currency(currency))
-            ac.save_to_db()
-
-            response = {
-                'status': 'success',
-                'account':
-                {
-                    'id': ac.id,
-                    'user': ac.user_id,
-                    'password': ac.password,
-                    'currency': ac.currency.name,
-                    'balance': ac.balance,
-                    'state': 'active' if ac.state else 'desactive',
-                    'created_at': ac.created_at,
-                    'updated_at': ac.updated_at
+                response = {
+                    'status': 'fail',
+                    'message': "Currency's wrong. Use the international standard that defines three-letter codes as "
+                                "currencies established by the International Organization. (ISO 4217)"
                 }
-            }
+            else:
+                # Save the account
+                ac = Account(user_id=user_id, password=password, currency=Currency(currency))
+                ac.save_to_db()
+
+                response = {
+                    'status': 'success',
+                    'account':
+                    {
+                        'id': ac.id,
+                        'user': ac.user_id,
+                        'password': ac.password,
+                        'currency': ac.currency.name,
+                        'balance': ac.balance,
+                        'state': 'active' if ac.state else 'desactive',
+                        'created_at': ac.created_at,
+                        'updated_at': ac.updated_at
+                    }
+                }
         except Exception as exc:
             code = HTTPStatus.INTERNAL_SERVER_ERROR
             response = {
@@ -192,7 +192,7 @@ def activate_account(account_id):
             }
         else:
             code = HTTPStatus.NOT_MODIFIED
-            raise Exception("The account is already activated")
+            response = "The account is already activated"
     else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
@@ -218,7 +218,7 @@ def desativate_account(account_id):
     account = Account.query.filter_by(id=account_id).first()
 
     if account:
-        if not account.state:
+        if account.state:
             account.state = False
             db.session.commit()
 
@@ -242,7 +242,7 @@ def desativate_account(account_id):
     return msg.message(code, response)
 
 # Get account information
-@account_controller.route('/account', methods=['GET'])
+@account_controller.route('/account/', methods=['GET'])
 @login_required
 def account_info(account_id):
     """

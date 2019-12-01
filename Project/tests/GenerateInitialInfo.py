@@ -21,7 +21,7 @@ print()
 
 headers = {'Content-Type': "application/json"}
 data = "{\"user_id\" : \"" + str(user_id) + "\", \"password\" : \"" + password + "\"}"
-response = requests.post('http://localhost:5000/login', headers=headers, data=data)
+response = requests.post('http://192.168.85-208/login', headers=headers, data=data)
 auth_token = response.json()['message']['auth_token']
 print("Buyer Token :", response.json()['message']['auth_token'])
 

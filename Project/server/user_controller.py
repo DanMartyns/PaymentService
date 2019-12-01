@@ -4,7 +4,6 @@ from server.models import Account, Active_Sessions
 from server.auxiliar_functions import Message
 from functools import wraps
 from http import HTTPStatus
-from flask_cors import cross_origin
 from flask import abort
 import uuid
 
@@ -20,7 +19,6 @@ def login_required(f):
             # know that the operation you are trying to access exists.
 
         auth_token = request.headers.get('Authorization')
-        print(auth_token)
 
         if auth_token:
             try:
@@ -29,8 +27,10 @@ def login_required(f):
                 # data = request.headers['Authorization'].encode('ascii', 'ignore')
                 # token = str.replace(str(data), 'Bearer ', '')
                 # token = Account.encode_auth_token(token)
+                if user_id == 'Token invalid.':
+                    abort(401, "Token invalid")
             except:
-                abort(401, {'status': 'fail', 'message': 'Something is wrong in the authentication'})
+                abort(401, "Something is wrong in the authentication")
             return f(user_id, *args, **kws)
         else:
             abort(401)
@@ -50,66 +50,69 @@ def login():
     code = HTTPStatus.OK
     msg = Message()
 
-    print("O que vem como request: ", request.get_json())
-    print(request.get_json()['user_id'])
+    user = Account.query.filter_by(user_id=request.json.get('user_id')).first()
+    print(user)
+    if user:
+        try:
+            # Get parameters
+            user_id = request.get_json()['user_id']
+            password = request.get_json()['password']
+            
+            # fetch the user data
+            current_user = Account.find_by_id(user_id=user_id)
 
-    # Get parameters
-    user_id = uuid.UUID(uuid.UUID(request.get_json()['user_id']).hex)
-    password = request.get_json()['password']
+            if not current_user:
+                code = HTTPStatus.NOT_FOUND
+                response = {
+                    'status': 'fail',
+                    'message': 'User {} doesn\'t exist'.format(user_id)
+                }
 
-    try:
-        # fetch the user data
-        current_user = Account.find_by_id(user_id)
+            if Account.check_password_hash(current_user.password, password):
 
-        if not current_user:
-            code = HTTPStatus.NOT_FOUND
-            response = {
-                'status': 'fail',
-                'message': 'User {} doesn\'t exist'.format(user_id)
-            }
+                with_token = Active_Sessions.query.filter_by(user_id=user_id).first()
+                if with_token is None:
+                    auth_token = Account.encode_auth_token(current_user.id)
+                    # mark the token into Active_Sessions
+                    active_session = Active_Sessions(token=auth_token, user_id=user_id)
+                    active_session.save_to_db()
 
-        if Account.check_password_hash(current_user.password, password):
+                    if auth_token:
+                        response = {
+                            'status': 'success',
+                            'message': 'Successfully logged in.',
+                            'auth_token': auth_token.decode()
+                        }
+                else:
+                    auth_token = with_token.token
 
-            with_token = Active_Sessions.query.filter_by(user_id=user_id).first()
-            if with_token is None:
-                auth_token = Account.encode_auth_token(current_user.id)
-                # mark the token into Active_Sessions
-                active_session = Active_Sessions(token=auth_token, user_id=user_id)
-                active_session.save_to_db()
+                    if auth_token:
+                        response = {
+                            'status': 'success',
+                            'message': 'Successfully logged in.',
+                            'auth_token': auth_token.replace("b\'", "").replace("\'", "")
+                        }
 
-                print("Devolvendo agora o token")
-                if auth_token:
-                    response = {
-                        'status': 'success',
-                        'message': 'Successfully logged in.',
-                        'auth_token': auth_token.decode()
-                    }
             else:
-                auth_token = with_token.token
-                print("Devolvendo agora o token0")
-                #TODO: devolver um novo token e apagar o anterior
-                if auth_token:
-                    response = {
-                        'status': 'success',
-                        'message': 'Successfully logged in.',
-                        'auth_token': auth_token.replace("b\'", "").replace("\'", "")
-                    }
+                code = HTTPStatus.BAD_REQUEST
+                response = {
+                    'status': 'fail',
+                    'message': 'Wrong Credentials'
+                }
 
-            return msg.message(code, response)
-        else:
-            code = HTTPStatus.BAD_REQUEST
+        except Exception as e:
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
             response = {
                 'status': 'fail',
-                'message': 'Wrong Credentials'
+                'message': str(e)
             }
-            return msg.message(code, response)
-    except Exception as e:
+    else:
         code = HTTPStatus.INTERNAL_SERVER_ERROR
         response = {
             'status': 'fail',
-            'message': str(e)
-        }
-        return msg.message(code, response)
+            'message': 'Something is wrong'
+        }        
+    return msg.message(code, response)
 
 
 @user_controller.route('/user/logout', methods=['POST'])
@@ -126,20 +129,21 @@ def logout(account_id):
 
     if account:
         if account.state:
-            Active_Sessions.query.filter(Active_Sessions.user_id == account_id).delete()
+            active = Active_Sessions.query.filter_by(user_id=account.user_id).first()
 
-            response = {
-                'status': 'success',
-                'message': 'Successfully logged out.'
-            }
-            return msg.message(code, response)
+            if active:
+                Active_Sessions.query.filter(Active_Sessions.user_id == account.user_id).delete()            
+                response = {
+                    'status': 'success',
+                    'message': 'Successfully logged out.'
+                }
         else:
             code = HTTPStatus.UNAUTHORIZED
             response = {
                 'status': 'fail',
-                'message': ''
+                'message': 'Yout account is desactivated'
             }
-            return msg.message(code, response)
+        return msg.message(code, response)
     else:
         code = HTTPStatus.FORBIDDEN
         response = {
@@ -152,75 +156,4 @@ def logout(account_id):
 @user_controller.route('/user/check/<uuid:token>', methods=['POST'])
 @login_required
 def check_token(self, account_id, token):
-    print("Quero saber o resultado disto: ", True if Active_Sessions.query.filter_by(token=token, user_id=account_id) else False)
     return True if Active_Sessions.query.filter_by(token=token, user_id=account_id) else False
-
-
-@user_controller.route('/user/loginR', methods=['POST'])
-def login_redirect():
-    """
-        User Login Resource
-    """
-    code = HTTPStatus.OK
-    msg = Message()
-
-    print("O que vem como request: ", request.get_json())
-    print(request.get_json()['user_id'])
-
-    # Get parameters
-    user_id = uuid.UUID(uuid.UUID(request.get_json()['user_id']).hex)
-    password = request.get_json()['password']
-
-    try:
-        # fetch the user data
-        current_user = Account.find_by_id(user_id)
-
-        if not current_user:
-            code = HTTPStatus.NOT_FOUND
-            response = {
-                'status': 'fail',
-                'message': 'User {} doesn\'t exist'.format(user_id)
-            }
-
-        if Account.check_password_hash(current_user.password, password):
-
-            with_token = Active_Sessions.query.filter_by(user_id=user_id).first()
-            if with_token is None:
-                auth_token = Account.encode_auth_token(current_user.id)
-                # mark the token into Active_Sessions
-                active_session = Active_Sessions(token=auth_token, user_id=user_id)
-                active_session.save_to_db()
-
-                print("Devolvendo agora o token")
-                if auth_token:
-                    response = {
-                        'status': 'success',
-                        'message': 'Successfully logged in.',
-                        'auth_token': auth_token.decode()
-                    }
-            else:
-                auth_token = with_token.token
-                print("Devolvendo agora o token0")
-                #TODO: devolver um novo token e apagar o anterior
-                if auth_token:
-                    response = {
-                        'status': 'success',
-                        'message': 'Successfully logged in.',
-                        'auth_token': auth_token.replace("b\'", "").replace("\'", "")
-                    }
-
-            return msg.message(code, response)
-        else:
-            code = HTTPStatus.BAD_REQUEST
-            response = {
-                'status': 'fail',
-                'message': 'Wrong Credentials'
-            }
-            return msg.message(code, response)
-    except Exception as e:
-        code = HTTPStatus.INTERNAL_SERVER_ERROR
-        response = {
-            'status': 'fail',
-            'message': str(e)
-        }
-        return msg.message(code, response)

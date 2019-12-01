@@ -7,7 +7,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 import os
 
-app = Flask(__name__, template_folder='templates', static_folder='static', static_url_path='/static')
+app = Flask(__name__, template_folder='templates', static_folder='static/static')
 CORS(app, support_credentials=True)
 
 db = SQLAlchemy()

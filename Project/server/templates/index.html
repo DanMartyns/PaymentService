@@ -6,21 +6,21 @@
     <meta name="description" content="Payment Service">
     <meta name="author" content="Daniel Martins">
     <title>Authorize</title>
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/font-awesome.min.css') }}" rel="stylesheet">
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/pe-icons.css') }}" rel="stylesheet">
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/prettyPhoto.css') }}" rel="stylesheet">
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/animate.css') }}" rel="stylesheet">
-    <link type="text/css" href="{{ url_for('static', filename='authorize_page/css/style.css') }}" rel="stylesheet">
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/jquery.js') }}"></script>
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/font-awesome.min.css" rel="stylesheet">
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/pe-icons.css" rel="stylesheet">
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/prettyPhoto.css" rel="stylesheet">
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/animate.css" rel="stylesheet">
+    <link type="text/css" href="http://192.168.85.208/styles/static/authorize_page/css/style.css" rel="stylesheet">
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/jquery.js"></script>
 
     <script type="text/javascript">
     jQuery(document).ready(function($){
 	'use strict';
       	jQuery('body').backstretch([
-	        "{{ url_for('static', filename='authorize_page/images/bg/bg1.jpg') }}",
-	        "{{ url_for('static', filename='authorize_page/images/bg/bg2.jpg') }}",
-	        "{{ url_for('static', filename='authorize_page/images/bg/bg3.jpg') }}"
+	        "http://192.168.85.208/styles/static/authorize_page/images/bg/bg1.jpg",
+	        "http://192.168.85.208/styles/static/authorize_page/images/bg/bg2.jpg",
+	        "http://192.168.85.208/styles/static/authorize_page/images/bg/bg3.jpg"
 	    ], {duration: 5000, fade: 500, centeredY: true });
 
 		$("#mapwrapper").gMap({ controls: false,
@@ -28,12 +28,12 @@
          	markers: [{
               	latitude:40.7566,
 				longitude: -73.9863,
-          	icon: { image: "./static/authorize_page/images/marker.png",
+          	icon: { image: "http://192.168.85.208/styles/static/authorize_page/images/marker.png",
               	iconsize: [44,44],
           		iconanchor: [12,46],
           		infowindowanchor: [12, 0] } }],
           	icon: {
-              	image: "/static/images/marker.png",
+              	image: "http://192.168.85.208/styles/static/images/marker.png",
              	iconsize: [26, 46],
               	iconanchor: [12, 46],
               	infowindowanchor: [12, 0] },
@@ -58,28 +58,28 @@
                     <div class="gap"></div>
                     <div class="container">
                         <div class="row">
-                            <div class="col-md-3 col-xs-5">
+                            <div class="col-md-3 col-xs-6">
                                 <div class="center bounce-in">
-                                    <img src="https://img.icons8.com/plasticine/100/000000/guest-male.png">
+                                    <img src="https://img.icons8.com/plasticine/64/000000/guest-male.png">
                                     <h3>{{ payment.buyer_user_id }}</h3>
                                     <h2>Sender</h2>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-xs-5">
+                            <div class="col-md-3 col-xs-6">
                                 <div class="center bounce-in">
                                     <img src="https://img.icons8.com/dusk/64/000000/bank-card-back-side.png">
                                     <h3>{{ payment.buyer }}</h3>
                                     <h2>Sender Account</h2>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-xs-5">
+                            <div class="col-md-3 col-xs-6">
                                 <div class="center bounce-in">
-                                    <img src="https://img.icons8.com/plasticine/100/000000/guest-male.png">
+                                    <img src="https://img.icons8.com/plasticine/64/000000/guest-male.png">
                                     <h3>{{ payment.seller_user_id }}</h3>
                                     <h2>Receiver</h2>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-xs-5">
+                            <div class="col-md-3 col-xs-6">
                                 <div class="center bounce-in">
                                     <img src="https://img.icons8.com/dusk/64/000000/bank-card-back-side.png">
                                     <h3>{{ payment.seller }}</h3>
@@ -143,6 +143,9 @@
                                             <p><font size="18"><strong>Total</strong> : {{ payment.amount }}€</font></p>
                                         </div>
                                         <a id="authorize" class="btn btn-outlined btn-primary btn-md"><font size="15">Authorize</font></a>
+                                        <h2 style="text-align:center;" id="message0"></h2>
+                                        <h2 style="text-align:center;" id="message1"></h2>
+                                        <h2 style="text-align:center;" id="message2"></h2>
 	                                </div>
 	                            </div>
 	                        </div>
@@ -155,10 +158,10 @@
         </div>
 
 
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/plugins.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/bootstrap.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/jquery.prettyPhoto.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/init.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='authorize_page/js/request.js') }}"></script>
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/plugins.js"></script>
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/jquery.prettyPhoto.js"></script>
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/init.js"></script>
+    <script type="text/javascript" src="http://192.168.85.208/styles/static/authorize_page/js/request.js?1"></script>
 </body>
 </html>
